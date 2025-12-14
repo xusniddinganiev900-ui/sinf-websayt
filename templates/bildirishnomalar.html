@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildirishnomalar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .notif-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .notif-card {
+            background: white; border-radius: 15px; padding: 15px 20px; margin-bottom: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 15px;
+        }
+        .notif-card.unread { border-left: 4px solid #667eea; background: #f8f9ff; }
+        .notif-icon { font-size: 2em; }
+        .notif-content { flex: 1; }
+        .notif-text { font-size: 14px; }
+        .notif-time { font-size: 12px; color: #999; }
+        .btn-mark-read { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; margin-bottom: 20px; }
+        .empty-state { text-align: center; padding: 50px; color: #666; }
+        [data-theme="dark"] .notif-card { background: #2d2d2d; }
+        [data-theme="dark"] .notif-card.unread { background: #3d3d5d; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item active"><a href="{{ url_for('bildirishnomalar') }}"><span class="icon">🔔</span> Bildirishnomalar</a></li>
+                <li class="nav-item"><a href="{{ url_for('dostlar') }}"><span class="icon">👥</span> Do'stlar</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="notif-container">
+                <h1>🔔 Bildirishnomalar</h1>
+                {% if bildirishnomalar %}
+                <button class="btn-mark-read" onclick="markAllRead()">Barchasini o'qilgan deb belgilash</button>
+                {% for notif in bildirishnomalar|reverse %}
+                <div class="notif-card {% if not notif.oqilgan %}unread{% endif %}">
+                    <div class="notif-icon">
+                        {% if notif.tur == 'sovga' %}🎁{% else %}📩{% endif %}
+                    </div>
+                    <div class="notif-content">
+                        <div class="notif-text">
+                            {% if notif.tur == 'sovga' %}
+                            <strong>{{ notif.kimdan }}</strong> sizga <strong>{{ notif.miqdor }} ball</strong> sovg'a qildi!
+                            {% endif %}
+                        </div>
+                        <div class="notif-time">{{ notif.vaqt }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <div style="font-size: 4em; margin-bottom: 20px;">📭</div>
+                    <p>Hozircha bildirishnomalar yo'q</p>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function markAllRead() {
+            fetch('/bildirishnoma_oqildi', {method: 'POST'})
+                .then(r => r.json())
+                .then(data => { if (data.success) location.reload(); });
+        }
+    </script>
+</body>
+</html>

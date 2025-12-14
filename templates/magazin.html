@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magazin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        /* Animatsiya modal */
+        .purchase-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .purchase-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            animation: modalPop 0.5s ease;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Xursand avatar */
+        .happy-avatar {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            animation: happyBounce 0.5s ease infinite alternate;
+        }
+
+        @keyframes happyBounce {
+            0% { transform: translateY(0) rotate(-5deg); }
+            100% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        /* Avatar almashinish animatsiyasi */
+        .avatar-transition {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+        }
+
+        .old-avatar {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            animation: oldAvatarOut 1.5s ease forwards;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 5px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: ringRotate 1s linear infinite;
+        }
+
+        @keyframes ringRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes oldAvatarOut {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.5) rotate(180deg); opacity: 0.5; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        }
+
+        .new-avatar {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            animation: newAvatarIn 1.5s ease 0.8s forwards;
+        }
+
+        @keyframes newAvatarIn {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confettiFall 2s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(300px) rotate(720deg); opacity: 0; }
+        }
+
+        .modal-title {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .modal-text {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Soni so'rash modali */
+        .quantity-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .quantity-modal.show {
+            display: flex;
+        }
+
+        .quantity-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .quantity-input {
+            width: 100px;
+            padding: 10px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .quantity-info {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .quantity-total {
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .quantity-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Yulduzchalar */
+        .stars {
+            position: absolute;
+            font-size: 30px;
+            animation: starPop 0.5s ease;
+        }
+
+        @keyframes starPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        /* Gadjet selfie animatsiya */
+        .selfie-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+        }
+
+        .selfie-avatar {
+            width: 150px;
+            height: 150px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: selfieWave 0.5s ease infinite alternate;
+        }
+
+        @keyframes selfieWave {
+            0% { transform: translateX(-50%) rotate(-3deg); }
+            100% { transform: translateX(-50%) rotate(3deg); }
+        }
+
+        .selfie-gadjet {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            animation: gadjetFloat 0.6s ease infinite alternate;
+        }
+
+        /* Gadjet pozitsiyalari */
+        .gadjet-quloqchin { top: 0; left: 50%; transform: translateX(-50%); }
+        .gadjet-shlyapa { top: -10px; left: 50%; transform: translateX(-50%); }
+        .gadjet-kozoynok { top: 35px; left: 50%; transform: translateX(-50%); width: 50px; }
+        .gadjet-medal { bottom: 50px; left: 50%; transform: translateX(-50%); }
+        .gadjet-telefon { bottom: 20px; right: 20px; transform: rotate(15deg); }
+        .gadjet-planshet { bottom: 30px; right: 10px; width: 70px; }
+        .gadjet-soat { bottom: 40px; left: 20px; width: 40px; }
+        .gadjet-sumka { bottom: 10px; left: 10px; width: 50px; }
+        .gadjet-kamera { bottom: 30px; right: 25px; width: 50px; }
+
+        @keyframes gadjetFloat {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-5px) scale(1.05); }
+        }
+
+        /* Flash effekt */
+        .camera-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2000;
+        }
+
+        .camera-flash.flash {
+            animation: flashEffect 0.3s ease;
+        }
+
+        @keyframes flashEffect {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Countdown */
+        .countdown-display {
+            font-size: 3em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 10px 0;
+            animation: countPulse 1s ease infinite;
+        }
+
+        @keyframes countPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Kamera ramkasi */
+        .camera-frame {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 4px solid #667eea;
+            border-radius: 20px;
+            pointer-events: none;
+        }
+
+        .camera-frame::before {
+            content: '📷';
+            position: absolute;
+            top: -20px;
+            right: -10px;
+            font-size: 30px;
+            animation: cameraShake 0.5s ease infinite;
+        }
+
+        @keyframes cameraShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        /* Foto ramka */
+        .photo-result {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.2);
+            transform: rotate(-3deg);
+            animation: photoSlide 0.5s ease;
+        }
+
+        @keyframes photoSlide {
+            0% { transform: scale(0) rotate(180deg); }
+            100% { transform: scale(1) rotate(-3deg); }
+        }
+
+        .photo-inner {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Chap menyu -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar" id="sidebar-avatar">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display" id="user-ball">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('kabinet') }}">
+                        <span class="icon">👤</span> Kabinet
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="{{ url_for('magazin') }}">
+                        <span class="icon">🛒</span> Magazin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- Magazin -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Magazin</h1>
+                <p>Ball sarflab xarid qiling | Sizda: <strong id="total-ball">{{ foydalanuvchi.ball }}</strong> ball</p>
+            </header>
+
+            <!-- Avatarlar -->
+            <section class="shop-section">
+                <h2>Avatarlar</h2>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Super O'g'il">
+                        </div>
+                        <h3>Super O'g'il</h3>
+                        <p class="price">10 ball</p>
+                        <button onclick="sotibOlish('super_ogil', 10, 'avatar', 'Super O`g`il')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 10 or foydalanuvchi.avatar == 'super_ogil' %}disabled{% endif %}>
+                            {% if foydalanuvchi.avatar == 'super_ogil' %}Tanlangan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Super Qiz">
+                        </div>
+                        <h3>Super Qiz</h3>
+                        <p class="price">10 ball</p>
+                        <button onclick="sotibOlish('super_qiz', 10, 'avatar', 'Super Qiz')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 10 or foydalanuvchi.avatar == 'super_qiz' %}disabled{% endif %}>
+                            {% if foydalanuvchi.avatar == 'super_qiz' %}Tanlangan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Ninja">
+                        </div>
+                        <h3>Ninja</h3>
+                        <p class="price">20 ball</p>
+                        <button onclick="sotibOlish('ninja', 20, 'avatar', 'Ninja')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 20 or foydalanuvchi.avatar == 'ninja' %}disabled{% endif %}>
+                            {% if foydalanuvchi.avatar == 'ninja' %}Tanlangan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Robot">
+                        </div>
+                        <h3>Robot</h3>
+                        <p class="price">25 ball</p>
+                        <button onclick="sotibOlish('robot', 25, 'avatar', 'Robot')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 25 or foydalanuvchi.avatar == 'robot' %}disabled{% endif %}>
+                            {% if foydalanuvchi.avatar == 'robot' %}Tanlangan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Astronavt">
+                        </div>
+                        <h3>Astronavt</h3>
+                        <p class="price">30 ball</p>
+                        <button onclick="sotibOlish('astronavt', 30, 'avatar', 'Astronavt')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 30 or foydalanuvchi.avatar == 'astronavt' %}disabled{% endif %}>
+                            {% if foydalanuvchi.avatar == 'astronavt' %}Tanlangan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gadjetlar -->
+            <section class="shop-section">
+                <h2>Gadjetlar</h2>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/kozoynok.svg') }}" alt="Ko'zoynok">
+                        </div>
+                        <h3>Ko'zoynok</h3>
+                        <p class="price">5 ball</p>
+                        <button onclick="sotibOlish('kozoynok', 5, 'gadjet', 'Ko`zoynok')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 5 or 'kozoynok' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'kozoynok' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/shlyapa.svg') }}" alt="Shlyapa">
+                        </div>
+                        <h3>Shlyapa</h3>
+                        <p class="price">7 ball</p>
+                        <button onclick="sotibOlish('shlyapa', 7, 'gadjet', 'Shlyapa')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 7 or 'shlyapa' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'shlyapa' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/medal.svg') }}" alt="Medal">
+                        </div>
+                        <h3>Medal</h3>
+                        <p class="price">15 ball</p>
+                        <button onclick="sotibOlish('medal', 15, 'gadjet', 'Medal')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 15 or 'medal' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'medal' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/telefon.svg') }}" alt="Telefon">
+                        </div>
+                        <h3>Telefon</h3>
+                        <p class="price">50 ball</p>
+                        <button onclick="sotibOlish('telefon', 50, 'gadjet', 'Telefon')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 50 or 'telefon' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'telefon' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/planshet.svg') }}" alt="Planshet">
+                        </div>
+                        <h3>Planshet</h3>
+                        <p class="price">80 ball</p>
+                        <button onclick="sotibOlish('planshet', 80, 'gadjet', 'Planshet')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 80 or 'planshet' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'planshet' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/quloqchin.svg') }}" alt="Quloqchin">
+                        </div>
+                        <h3>Quloqchin</h3>
+                        <p class="price">25 ball</p>
+                        <button onclick="sotibOlish('quloqchin', 25, 'gadjet', 'Quloqchin')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 25 or 'quloqchin' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'quloqchin' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/soat.svg') }}" alt="Soat">
+                        </div>
+                        <h3>Soat</h3>
+                        <p class="price">35 ball</p>
+                        <button onclick="sotibOlish('soat', 35, 'gadjet', 'Soat')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 35 or 'soat' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'soat' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/sumka.svg') }}" alt="Sumka">
+                        </div>
+                        <h3>Sumka</h3>
+                        <p class="price">20 ball</p>
+                        <button onclick="sotibOlish('sumka', 20, 'gadjet', 'Sumka')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 20 or 'sumka' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'sumka' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename='images/kamera.svg') }}" alt="Kamera">
+                        </div>
+                        <h3>Kamera</h3>
+                        <p class="price">60 ball</p>
+                        <button onclick="sotibOlish('kamera', 60, 'gadjet', 'Kamera')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 60 or 'kamera' in foydalanuvchi.gadjetlar %}disabled{% endif %}>
+                            {% if 'kamera' in foydalanuvchi.gadjetlar %}Sotib olingan{% else %}Sotib olish{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bonuslar -->
+            <section class="shop-section">
+                <h2>O'yin Bonuslari</h2>
+                <div class="products-grid">
+                    <div class="product-card bonus-card">
+                        <div class="product-image">
+                            <span class="bonus-icon">⏱️</span>
+                        </div>
+                        <h3>+5 soniya vaqt</h3>
+                        <p class="price">3 ball</p>
+                        <p class="bonus-count">Sizda: {{ (foydalanuvchi.bonuslar or {}).get('vaqt_5', 0) }} ta</p>
+                        <button onclick="sotibOlish('vaqt_5', 3, 'bonus', '+5 soniya vaqt')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 3 %}disabled{% endif %}>
+                            Sotib olish
+                        </button>
+                    </div>
+
+                    <div class="product-card bonus-card">
+                        <div class="product-image">
+                            <span class="bonus-icon">🎯</span>
+                        </div>
+                        <h3>50/50</h3>
+                        <p class="price">5 ball</p>
+                        <p class="bonus-count">Sizda: {{ (foydalanuvchi.bonuslar or {}).get('5050', 0) }} ta</p>
+                        <button onclick="sotibOlish('5050', 5, 'bonus', '50/50 yordam')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 5 %}disabled{% endif %}>
+                            Sotib olish
+                        </button>
+                    </div>
+
+                    <div class="product-card bonus-card">
+                        <div class="product-image">
+                            <span class="bonus-icon">⏭️</span>
+                        </div>
+                        <h3>Savolni o'tkazish</h3>
+                        <p class="price">4 ball</p>
+                        <p class="bonus-count">Sizda: {{ (foydalanuvchi.bonuslar or {}).get('otkazish', 0) }} ta</p>
+                        <button onclick="sotibOlish('otkazish', 4, 'bonus', 'Savolni o`tkazish')" class="btn btn-buy"
+                            {% if foydalanuvchi.ball < 4 %}disabled{% endif %}>
+                            Sotib olish
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Soni so'rash modali -->
+    <div class="quantity-modal" id="quantityModal">
+        <div class="quantity-content">
+            <h2 id="quantity-title">Nechta sotib olasiz?</h2>
+            <p class="quantity-info" id="quantity-price">Narxi: 1 ball</p>
+            <input type="number" class="quantity-input" id="quantity-input" value="1" min="1" oninput="updateQuantityTotal()">
+            <p class="quantity-total" id="quantity-total">Jami: 1 ball</p>
+            <p class="quantity-info">Sizda: <span id="quantity-available">0</span> ball</p>
+            <div class="quantity-buttons">
+                <button class="btn-cancel" onclick="closeQuantityModal()">Bekor qilish</button>
+                <button class="btn-confirm" id="quantity-confirm" onclick="confirmPurchase()">Sotib olish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animatsiya modal -->
+    <div class="purchase-modal" id="purchaseModal">
+        <div class="modal-content" id="modalContent">
+            <!-- Dinamik kontent -->
+        </div>
+    </div>
+
+    <!-- Flash effekt -->
+    <div class="camera-flash" id="cameraFlash"></div>
+
+    <script>
+        let userBall = {{ foydalanuvchi.ball }};
+        const currentAvatar = "{{ foydalanuvchi.avatar }}";
+        const userJins = "{{ foydalanuvchi.jins }}";
+
+        // Soni so'rash uchun o'zgaruvchilar
+        let pendingPurchase = null;
+
+        function getAvatarUrl(avatarId) {
+            const avatars = {
+                'super_ogil': '/static/images/super_ogil.svg',
+                'super_qiz': '/static/images/super_qiz.svg',
+                'ninja': '/static/images/ninja.svg',
+                'robot': '/static/images/robot.svg',
+                'astronavt': '/static/images/astronavt.svg',
+                'oddiy': userJins === 'qiz' ? '/static/images/qiz.svg' : '/static/images/ogil.svg'
+            };
+            return avatars[avatarId] || avatars['oddiy'];
+        }
+
+        function createConfetti() {
+            const colors = ['#667eea', '#764ba2', '#f39c12', '#e74c3c', '#2ecc71'];
+            const modal = document.getElementById('modalContent');
+
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                modal.appendChild(confetti);
+            }
+        }
+
+        function getGadjetUrl(gadjetId) {
+            return '/static/images/' + gadjetId + '.svg';
+        }
+
+        function triggerFlash() {
+            const flash = document.getElementById('cameraFlash');
+            flash.classList.add('flash');
+            setTimeout(() => flash.classList.remove('flash'), 300);
+        }
+
+        function showPurchaseAnimation(tur, mahsulotNomi, yangiAvatarId, soni) {
+            const modal = document.getElementById('purchaseModal');
+            const content = document.getElementById('modalContent');
+
+            if (tur === 'avatar') {
+                content.innerHTML = `
+                    <div class="avatar-transition">
+                        <div class="avatar-ring"></div>
+                        <img class="old-avatar" src="${getAvatarUrl(currentAvatar)}" alt="Eski avatar">
+                        <img class="new-avatar" src="${getAvatarUrl(yangiAvatarId)}" alt="Yangi avatar">
+                    </div>
+                    <h2 class="modal-title">🎉 Yangi Avatar!</h2>
+                    <p class="modal-text">${mahsulotNomi} avatari sizniki bo'ldi!</p>
+                    <div style="position: relative;">
+                        <span class="stars" style="top: -20px; left: 20px;">⭐</span>
+                        <span class="stars" style="top: -10px; right: 20px; animation-delay: 0.2s;">✨</span>
+                        <span class="stars" style="top: 10px; left: 40px; animation-delay: 0.4s;">🌟</span>
+                    </div>
+                    <button class="modal-btn" onclick="closeModal()">Davom etish</button>
+                `;
+                createConfetti();
+                modal.classList.add('show');
+            } else if (tur === 'gadjet') {
+                // Gadjet uchun selfie animatsiya
+                showGadjetSelfie(mahsulotNomi, yangiAvatarId, modal, content);
+            } else {
+                // Bonus uchun oddiy animatsiya
+                const soniText = soni > 1 ? ` (${soni} ta)` : '';
+                content.innerHTML = `
+                    <img class="happy-avatar" src="${getAvatarUrl(currentAvatar)}" alt="Xursand avatar">
+                    <h2 class="modal-title">🎊 Tabriklaymiz!</h2>
+                    <p class="modal-text">${mahsulotNomi}${soniText} sotib olindi!</p>
+                    <div style="position: relative;">
+                        <span class="stars" style="top: -20px; left: 30px;">🎁</span>
+                        <span class="stars" style="top: -10px; right: 30px; animation-delay: 0.2s;">🎈</span>
+                    </div>
+                    <button class="modal-btn" onclick="closeModal()">Davom etish</button>
+                `;
+                createConfetti();
+                modal.classList.add('show');
+            }
+        }
+
+        function showGadjetSelfie(mahsulotNomi, gadjetId, modal, content) {
+            // Countdown boshlash (3, 2, 1)
+            let countdown = 3;
+
+            content.innerHTML = `
+                <div class="selfie-container" style="position: relative;">
+                    <div class="camera-frame"></div>
+                    <img class="selfie-avatar" src="${getAvatarUrl(currentAvatar)}" alt="Avatar">
+                    <img class="selfie-gadjet gadjet-${gadjetId}" src="${getGadjetUrl(gadjetId)}" alt="${mahsulotNomi}">
+                </div>
+                <h2 class="modal-title">📸 Suratga tushish!</h2>
+                <p class="modal-text">${mahsulotNomi} bilan rasm!</p>
+                <div class="countdown-display" id="countdownNum">${countdown}</div>
+            `;
+            modal.classList.add('show');
+
+            // Countdown
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                const countEl = document.getElementById('countdownNum');
+                if (countEl) {
+                    if (countdown > 0) {
+                        countEl.textContent = countdown;
+                    } else {
+                        countEl.textContent = '📸';
+                        clearInterval(countdownInterval);
+
+                        // Flash va foto ko'rsatish
+                        setTimeout(() => {
+                            triggerFlash();
+                            setTimeout(() => {
+                                showPhotoResult(mahsulotNomi, gadjetId, content);
+                            }, 300);
+                        }, 200);
+                    }
+                }
+            }, 1000);
+        }
+
+        function showPhotoResult(mahsulotNomi, gadjetId, content) {
+            content.innerHTML = `
+                <div class="photo-result">
+                    <div class="photo-inner">
+                        <img src="${getAvatarUrl(currentAvatar)}" alt="Avatar"
+                             style="width: 120px; height: 120px; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">
+                        <img src="${getGadjetUrl(gadjetId)}" alt="${mahsulotNomi}"
+                             class="selfie-gadjet gadjet-${gadjetId}" style="animation: none;">
+                    </div>
+                    <p style="text-align: center; margin-top: 10px; color: #667eea; font-weight: bold;">
+                        ${mahsulotNomi} ✨
+                    </p>
+                </div>
+                <h2 class="modal-title">🎉 Ajoyib rasm!</h2>
+                <p class="modal-text">${mahsulotNomi} sizniki bo'ldi!</p>
+                <button class="modal-btn" onclick="closeModal()">Davom etish</button>
+            `;
+            createConfetti();
+        }
+
+        function closeModal() {
+            document.getElementById('purchaseModal').classList.remove('show');
+            location.reload();
+        }
+
+        // Soni so'rash modali
+        function showQuantityModal(mahsulot_id, narx, tur, mahsulotNomi) {
+            pendingPurchase = { mahsulot_id, narx, tur, mahsulotNomi };
+
+            document.getElementById('quantity-title').textContent = mahsulotNomi + ' - Nechta?';
+            document.getElementById('quantity-price').textContent = 'Narxi: ' + narx + ' ball';
+            document.getElementById('quantity-input').value = 1;
+            document.getElementById('quantity-total').textContent = 'Jami: ' + narx + ' ball';
+            document.getElementById('quantity-available').textContent = userBall;
+
+            document.getElementById('quantityModal').classList.add('show');
+            document.getElementById('quantity-input').focus();
+        }
+
+        function closeQuantityModal() {
+            document.getElementById('quantityModal').classList.remove('show');
+            pendingPurchase = null;
+        }
+
+        // Soni o'zgarganda jami narxni yangilash
+        function updateQuantityTotal() {
+            if (pendingPurchase) {
+                const soni = parseInt(document.getElementById('quantity-input').value) || 1;
+                const jami = soni * pendingPurchase.narx;
+                document.getElementById('quantity-total').textContent = 'Jami: ' + jami + ' ball';
+
+                // Agar ball yetarli bo'lmasa
+                if (jami > userBall) {
+                    document.getElementById('quantity-total').style.color = '#e74c3c';
+                } else {
+                    document.getElementById('quantity-total').style.color = '#667eea';
+                }
+            }
+        }
+
+        // Sotib olishni tasdiqlash
+        function confirmPurchase() {
+            if (pendingPurchase) {
+                const soni = parseInt(document.getElementById('quantity-input').value) || 1;
+                const jami = soni * pendingPurchase.narx;
+
+                if (jami > userBall) {
+                    alert('Ball yetarli emas!');
+                    return;
+                }
+
+                // Avval qiymatlarni saqlab olish
+                const { mahsulot_id, narx, tur, mahsulotNomi } = pendingPurchase;
+
+                // Modalni yopish
+                document.getElementById('quantityModal').classList.remove('show');
+                pendingPurchase = null;
+
+                // Sotib olish
+                buyItem(mahsulot_id, narx, tur, mahsulotNomi, soni);
+            }
+        }
+
+        function sotibOlish(mahsulot_id, narx, tur, mahsulotNomi) {
+            if (userBall < narx) {
+                alert('Ball yetarli emas!');
+                return;
+            }
+
+            // Bonuslar uchun soni so'rash
+            if (tur === 'bonus') {
+                showQuantityModal(mahsulot_id, narx, tur, mahsulotNomi);
+                return;
+            }
+
+            // Avatar va gadjetlar uchun to'g'ridan-to'g'ri sotib olish
+            buyItem(mahsulot_id, narx, tur, mahsulotNomi, 1);
+        }
+
+        function buyItem(mahsulot_id, narx, tur, mahsulotNomi, soni) {
+            console.log('Sotib olish:', {mahsulot_id, narx, tur, soni});
+
+            const formData = new FormData();
+            formData.append('mahsulot_id', mahsulot_id);
+            formData.append('narx', narx);
+            formData.append('tur', tur);
+            formData.append('soni', soni);
+
+            fetch('/sotib_olish', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Server javobi:', data);
+                if (data.success) {
+                    userBall = data.yangi_ball;
+                    document.getElementById('user-ball').textContent = userBall + ' ball';
+                    document.getElementById('total-ball').textContent = userBall;
+
+                    showPurchaseAnimation(tur, mahsulotNomi, mahsulot_id, soni);
+                } else {
+                    alert(data.xato || 'Xatolik yuz berdi!');
+                }
+            })
+            .catch(error => {
+                console.error('Xatolik:', error);
+                alert('Server bilan aloqa xatosi!');
+            });
+        }
+    </script>
+</body>
+</html>

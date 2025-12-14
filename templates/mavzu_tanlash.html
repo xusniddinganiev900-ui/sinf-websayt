@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mavzu Tanlash</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .theme-container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .preview-box {
+            background: white; border-radius: 20px; padding: 30px; margin-bottom: 30px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1); text-align: center;
+        }
+        .preview-box h2 { margin-bottom: 20px; }
+        .preview-element {
+            display: inline-block; padding: 15px 40px; border-radius: 25px;
+            color: white; font-size: 1.2em; transition: background 0.3s;
+        }
+        .theme-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px; margin: 20px 0;
+        }
+        .theme-item {
+            background: white; border-radius: 15px; padding: 20px; text-align: center;
+            cursor: pointer; transition: all 0.3s; border: 3px solid transparent;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .theme-item:hover { transform: scale(1.05); }
+        .theme-item.selected { border-color: #27ae60; }
+        .theme-color {
+            width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;
+        }
+        .theme-name { font-weight: bold; }
+        .btn-save {
+            display: block; width: 100%; max-width: 300px; margin: 30px auto;
+            background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;
+            border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1em; cursor: pointer;
+        }
+        .success-msg { text-align: center; color: #27ae60; margin: 15px 0; display: none; }
+        [data-theme="dark"] .preview-box { background: #2d2d2d; }
+        [data-theme="dark"] .theme-item { background: #2d2d2d; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/' + (foydalanuvchi.avatar if foydalanuvchi.avatar else 'ogil.svg')) }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="theme-container">
+                <h1>🎨 Mavzu Tanlash</h1>
+
+                <div class="preview-box">
+                    <h2>Ko'rinish</h2>
+                    <div class="preview-element" id="previewElement" style="background: {{ mavzular[foydalanuvchi.mavzu if foydalanuvchi.mavzu else 'default'].rang }}">
+                        Namuna tugma
+                    </div>
+                </div>
+
+                <h3>Mavjud ranglar:</h3>
+                <div class="theme-grid">
+                    {% for key, mavzu in mavzular.items() %}
+                    <div class="theme-item {% if (foydalanuvchi.mavzu if foydalanuvchi.mavzu else 'default') == key %}selected{% endif %}"
+                         onclick="selectTheme('{{ key }}', '{{ mavzu.rang }}', this)">
+                        <div class="theme-color" style="background: {{ mavzu.rang }}"></div>
+                        <div class="theme-name">{{ mavzu.nomi }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="success-msg" id="successMsg">✅ Mavzu saqlandi!</div>
+                <button class="btn-save" id="saveBtn" onclick="saveTheme()">💾 Saqlash</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let selectedTheme = '{{ foydalanuvchi.mavzu if foydalanuvchi.mavzu else "default" }}';
+        let selectedColor = '{{ mavzular[foydalanuvchi.mavzu if foydalanuvchi.mavzu else "default"].rang }}';
+
+        function selectTheme(theme, color, el) {
+            selectedTheme = theme;
+            selectedColor = color;
+            document.querySelectorAll('.theme-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('previewElement').style.background = color;
+            document.getElementById('successMsg').style.display = 'none';
+        }
+
+        function saveTheme() {
+            fetch('/mavzu_saqlash', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mavzu: selectedTheme})
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    document.getElementById('successMsg').style.display = 'block';
+                    // CSS variable ni o'zgartirish
+                    document.documentElement.style.setProperty('--primary-color', data.rang);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

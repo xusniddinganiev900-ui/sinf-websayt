@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sertifikatlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 600px; margin: 0 auto; }
+        .cert-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .cert-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .cert-card.locked { opacity: 0.5; filter: grayscale(1); }
+        .cert-card.unlocked { background: linear-gradient(135deg, #fff9e6, #fff3cd); }
+        .cert-icon { font-size: 4em; margin-bottom: 15px; }
+        .cert-name { font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .cert-desc { color: #666; font-size: 0.9em; }
+        .cert-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #27ae60;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.75em;
+        }
+        .cert-locked-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #6c757d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.75em;
+        }
+        .new-cert-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .new-cert-modal.show { display: flex; }
+        .new-cert-content {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            max-width: 350px;
+            animation: certPop 0.5s ease;
+        }
+        @keyframes certPop {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        .confetti { font-size: 3em; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Sertifikatlar</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 25px;">
+                Yutuqlaringiz uchun sertifikatlar oling!
+            </p>
+
+            <div class="container">
+                <div class="cert-grid">
+                    {% for sert in sertifikatlar %}
+                    <div class="cert-card {% if sert.olingan %}unlocked{% else %}locked{% endif %}">
+                        {% if sert.olingan %}
+                        <span class="cert-badge">Olingan ✓</span>
+                        {% else %}
+                        <span class="cert-locked-badge">🔒</span>
+                        {% endif %}
+                        <div class="cert-icon">
+                            {% if sert.rasm == 'bronze' %}🥉
+                            {% elif sert.rasm == 'silver' %}🥈
+                            {% elif sert.rasm == 'gold' %}🥇
+                            {% elif sert.rasm == 'reader' %}📚
+                            {% elif sert.rasm == 'studious' %}🎓
+                            {% elif sert.rasm == 'social' %}🤝
+                            {% else %}🏆{% endif %}
+                        </div>
+                        <div class="cert-name">{{ sert.nomi }}</div>
+                        <div class="cert-desc">{{ sert.shart }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    {% if yangi %}
+    <div class="new-cert-modal show" id="newCertModal">
+        <div class="new-cert-content">
+            <div class="confetti">🎉🏆🎉</div>
+            <h2 style="margin: 20px 0;">Tabriklaymiz!</h2>
+            <p>Yangi sertifikat oldingiz:</p>
+            <div style="font-size: 4em; margin: 20px 0;">
+                {% for sert_id in yangi %}
+                {% for sert in sertifikatlar if sert.id == sert_id %}
+                {% if sert.rasm == 'bronze' %}🥉{% elif sert.rasm == 'silver' %}🥈{% elif sert.rasm == 'gold' %}🥇{% elif sert.rasm == 'reader' %}📚{% elif sert.rasm == 'studious' %}🎓{% elif sert.rasm == 'social' %}🤝{% else %}🏆{% endif %}
+                {% endfor %}
+                {% endfor %}
+            </div>
+            <button onclick="document.getElementById('newCertModal').classList.remove('show')" style="padding: 12px 40px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1em;">Ajoyib!</button>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

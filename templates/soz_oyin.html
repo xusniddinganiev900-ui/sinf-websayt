@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So'z O'yini</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .game-container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+        .letters-box {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            margin: 30px 0; padding: 20px;
+        }
+        .letter {
+            width: 50px; height: 50px; background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; font-weight: bold; border-radius: 10px; cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .letter:hover { transform: scale(1.1); }
+        .letter.used { opacity: 0.3; pointer-events: none; }
+        .answer-box {
+            min-height: 60px; background: #f5f5f5; border-radius: 15px; padding: 15px;
+            margin: 20px 0; display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;
+        }
+        .answer-letter {
+            width: 40px; height: 40px; background: #27ae60; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer;
+        }
+        .btn { padding: 12px 30px; border: none; border-radius: 25px; cursor: pointer; margin: 5px; font-size: 1em; }
+        .btn-check { background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; }
+        .btn-clear { background: #e74c3c; color: white; }
+        .btn-skip { background: #95a5a6; color: white; }
+        .btn-new { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .result { font-size: 1.5em; margin: 20px 0; padding: 20px; border-radius: 15px; }
+        .result.correct { background: #d5f4e6; color: #27ae60; }
+        .result.wrong { background: #fce4e4; color: #e74c3c; }
+        .hint { color: #666; margin: 10px 0; }
+        [data-theme="dark"] .answer-box { background: #3d3d3d; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/' + (foydalanuvchi.avatar if foydalanuvchi.avatar else 'ogil.svg')) }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('oyin') }}"><span class="icon">🎮</span> O'yinlar</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="game-container">
+                <h1>🔤 So'z O'yini</h1>
+                <p>Aralashgan harflardan so'z tuzing!</p>
+                <p class="hint">💡 To'g'ri javob uchun +15 ball</p>
+
+                <div class="letters-box" id="lettersBox">
+                    {% for harf in harflar %}
+                    <div class="letter" onclick="selectLetter(this)">{{ harf }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="answer-box" id="answerBox"></div>
+
+                <div id="buttons">
+                    <button class="btn btn-check" onclick="checkAnswer()">✅ Tekshirish</button>
+                    <button class="btn btn-clear" onclick="clearAnswer()">🗑️ Tozalash</button>
+                    <button class="btn btn-skip" onclick="skipWord()">⏭️ O'tkazib yuborish</button>
+                </div>
+
+                <div id="result" class="result" style="display: none;"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const correctWord = "{{ soz }}";
+        let currentAnswer = [];
+
+        function selectLetter(el) {
+            if (el.classList.contains('used')) return;
+            el.classList.add('used');
+            currentAnswer.push(el.textContent);
+            updateAnswerBox();
+        }
+
+        function updateAnswerBox() {
+            const box = document.getElementById('answerBox');
+            box.innerHTML = currentAnswer.map((l, i) =>
+                `<div class="answer-letter" onclick="removeLetter(${i})">${l}</div>`
+            ).join('');
+        }
+
+        function removeLetter(index) {
+            const letter = currentAnswer[index];
+            currentAnswer.splice(index, 1);
+            updateAnswerBox();
+
+            // Harfni qaytarish
+            document.querySelectorAll('.letter.used').forEach(el => {
+                if (el.textContent === letter && !currentAnswer.includes(letter)) {
+                    el.classList.remove('used');
+                }
+            });
+        }
+
+        function clearAnswer() {
+            currentAnswer = [];
+            updateAnswerBox();
+            document.querySelectorAll('.letter').forEach(el => el.classList.remove('used'));
+        }
+
+        function checkAnswer() {
+            const answer = currentAnswer.join('');
+            const result = document.getElementById('result');
+
+            fetch('/soz_tekshir', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({javob: answer, togri: correctWord})
+            }).then(r => r.json()).then(data => {
+                if (data.togri) {
+                    result.className = 'result correct';
+                    result.innerHTML = `🎉 To'g'ri! +${data.ball} ball<br><button class="btn btn-new" onclick="location.reload()">🔄 Yangi so'z</button>`;
+                } else {
+                    result.className = 'result wrong';
+                    result.innerHTML = '❌ Noto\'g\'ri, qayta urinib ko\'ring!';
+                }
+                result.style.display = 'block';
+            });
+        }
+
+        function skipWord() {
+            const result = document.getElementById('result');
+            result.className = 'result wrong';
+            result.innerHTML = `To'g'ri javob: <strong>${correctWord}</strong><br><button class="btn btn-new" onclick="location.reload()">🔄 Yangi so'z</button>`;
+            result.style.display = 'block';
+            document.getElementById('buttons').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

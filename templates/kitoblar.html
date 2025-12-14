@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitob ro'yxati</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 600px; margin: 0 auto; }
+        .add-book { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .add-book input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        .add-book button { padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; cursor: pointer; }
+        .book-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; gap: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .book-icon { font-size: 3em; }
+        .book-info { flex: 1; }
+        .book-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+        .book-author { color: #666; font-size: 0.9em; margin-bottom: 10px; }
+        .book-status { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 0.85em; }
+        .status-oqilmoqda { background: #fff3cd; color: #856404; }
+        .status-oqilgan { background: #d4edda; color: #155724; }
+        .status-kutilmoqda { background: #e2e3e5; color: #383d41; }
+        .status-btns { display: flex; gap: 8px; margin-top: 10px; }
+        .status-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 0.85em; }
+        .status-btn:hover { background: #f8f9fa; }
+        .status-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .stats-row { display: flex; gap: 15px; margin-bottom: 25px; }
+        .stat-card { flex: 1; background: white; padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Kitob ro'yxati</h1>
+
+            <div class="container">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ kitoblar|selectattr('holat', 'equalto', 'oqilgan')|list|length }}</div>
+                        <div class="stat-label">O'qilgan</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ kitoblar|selectattr('holat', 'equalto', 'oqilmoqda')|list|length }}</div>
+                        <div class="stat-label">O'qilmoqda</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ kitoblar|length }}</div>
+                        <div class="stat-label">Jami</div>
+                    </div>
+                </div>
+
+                <div class="add-book">
+                    <h3 style="margin-bottom: 15px;">Yangi kitob qo'shish</h3>
+                    <input type="text" id="bookName" placeholder="Kitob nomi">
+                    <input type="text" id="bookAuthor" placeholder="Muallif">
+                    <button onclick="addBook()">Qo'shish (+5 ball)</button>
+                </div>
+
+                {% for kitob in kitoblar %}
+                <div class="book-card">
+                    <div class="book-icon">📚</div>
+                    <div class="book-info">
+                        <div class="book-title">{{ kitob.nomi }}</div>
+                        <div class="book-author">{{ kitob.muallif or 'Noma\'lum muallif' }}</div>
+                        <span class="book-status status-{{ kitob.holat }}">
+                            {% if kitob.holat == 'oqilgan' %}O'qilgan{% elif kitob.holat == 'oqilmoqda' %}O'qilmoqda{% else %}Kutilmoqda{% endif %}
+                        </span>
+                        <div class="status-btns">
+                            <button class="status-btn {% if kitob.holat == 'kutilmoqda' %}active{% endif %}" onclick="updateStatus({{ kitob.id }}, 'kutilmoqda')">Kutilmoqda</button>
+                            <button class="status-btn {% if kitob.holat == 'oqilmoqda' %}active{% endif %}" onclick="updateStatus({{ kitob.id }}, 'oqilmoqda')">O'qilmoqda</button>
+                            <button class="status-btn {% if kitob.holat == 'oqilgan' %}active{% endif %}" onclick="updateStatus({{ kitob.id }}, 'oqilgan')">O'qilgan (+20)</button>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    <p style="font-size: 3em;">📖</p>
+                    <p>Hali kitoblar yo'q</p>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function addBook() {
+            const nomi = document.getElementById('bookName').value.trim();
+            const muallif = document.getElementById('bookAuthor').value.trim();
+            if (!nomi) return alert('Kitob nomini kiriting');
+
+            fetch('/kitob_qoshish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({nomi, muallif})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+
+        function updateStatus(id, holat) {
+            fetch('/kitob_holat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id, holat})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

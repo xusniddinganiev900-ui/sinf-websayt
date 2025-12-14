@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinflar - Tanlash</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .sinflar-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .sinflar-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .sinflar-header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .sinflar-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .sinflar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .sinf-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .sinf-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .sinf-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2em;
+        }
+
+        .sinf-card h3 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .sinf-card p {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .sinf-stats {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .yangi-sinf-card {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .yangi-sinf-card .sinf-icon {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .yangi-sinf-card h3 {
+            color: white;
+        }
+
+        .yangi-sinf-card p {
+            color: rgba(255,255,255,0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="sinflar-container">
+        <div class="sinflar-header">
+            <h1>Sinflar</h1>
+            <p>O'z sinfingizni tanlang yoki yangi sinf yarating</p>
+        </div>
+
+        <div class="sinflar-grid">
+            {% for sinf_id, sinf_info in sinflar.items() %}
+            <a href="{{ url_for('index', sinf_id=sinf_id) }}" class="sinf-card">
+                <div class="sinf-icon">{{ sinf_info.icon }}</div>
+                <h3>{{ sinf_info.nomi }}</h3>
+                <p>{{ sinf_info.tavsif }}</p>
+                <div class="sinf-stats">
+                    <div class="stat">
+                        <div class="stat-value">{{ sinf_info.oquvchilar_soni }}</div>
+                        <div class="stat-label">O'quvchi</div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+
+            <!-- Yangi sinf yaratish -->
+            <a href="{{ url_for('yangi_sinf') }}" class="sinf-card yangi-sinf-card">
+                <div class="sinf-icon">+</div>
+                <h3>Yangi sinf yaratish</h3>
+                <p>O'z sinfingiz uchun alohida web-sayt oching</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

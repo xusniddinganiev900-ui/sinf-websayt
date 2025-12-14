@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reyting</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        .leaderboard {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .leaderboard-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .leaderboard-title h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        .player-list {
+            padding: 10px;
+        }
+        .player-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .player-item:hover {
+            background: #f8f9fa;
+        }
+        .player-item.me {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+        }
+        .player-item.gold {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+        }
+        .player-item.silver {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .player-item.bronze {
+            background: linear-gradient(135deg, #fff5f0 0%, #ffe8dc 100%);
+        }
+        .rank {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-right: 15px;
+        }
+        .rank.r1 { background: #ffd700; color: #8b6914; }
+        .rank.r2 { background: #c0c0c0; color: #555; }
+        .rank.r3 { background: #cd7f32; color: #5a3510; }
+        .rank.other { background: #e9ecef; color: #666; }
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .player-info {
+            flex: 1;
+        }
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .player-level {
+            font-size: 12px;
+            color: #888;
+        }
+        .player-score {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+        .my-rank-box {
+            background: #f8f9fa;
+            margin: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        .my-rank-box span {
+            color: #666;
+        }
+        .my-rank-box strong {
+            color: #667eea;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar and foydalanuvchi.avatar != 'oddiy' %}
+                    <img src="{{ url_for('static', filename='images/' + foydalanuvchi.avatar + '.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+                <li class="nav-item"><a href="{{ url_for('oyin') }}"><span class="icon">🎮</span> Game</a></li>
+                <li class="nav-item active"><a href="{{ url_for('reyting') }}"><span class="icon">🏆</span> Reyting</a></li>
+                <li class="nav-item"><a href="{{ url_for('magazin') }}"><span class="icon">🛒</span> Magazin</a></li>
+                <li class="nav-item"><a href="{{ url_for('chat') }}"><span class="icon">💬</span> Chat</a></li>
+                <li class="nav-item"><a href="{{ url_for('sozlamalar') }}"><span class="icon">⚙️</span> Sozlamalar</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>🏆 Reyting</h1>
+                <p>{{ sinf_nomi }} - TOP o'quvchilar</p>
+            </header>
+
+            <div class="leaderboard">
+                <div class="leaderboard-title">
+                    <h2>🏆 TOP 10</h2>
+                </div>
+
+                <div class="my-rank-box">
+                    <span>Sizning o'rningiz: </span>
+                    <strong>#{{ my_rank }}</strong>
+                </div>
+
+                <div class="player-list">
+                    {% for player in top_players %}
+                    {% if player.ism != 'HAKER' %}
+                    <div class="player-item {% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% elif loop.index == 3 %}bronze{% endif %} {% if player.ism == ism %}me{% endif %}">
+
+                        <div class="rank {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% else %}other{% endif %}">
+                            {% if loop.index == 1 %}👑{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                        </div>
+
+                        {% if player.avatar and player.avatar != 'oddiy' %}
+                        <img class="player-avatar" src="{{ url_for('static', filename='images/' + player.avatar + '.svg') }}" alt="Avatar">
+                        {% elif player.jins == 'qiz' %}
+                        <img class="player-avatar" src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                        {% else %}
+                        <img class="player-avatar" src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                        {% endif %}
+
+                        <div class="player-info">
+                            <div class="player-name">{{ player.ism }}{% if player.ism == ism %} (Siz){% endif %}</div>
+                            <div class="player-level">Mavsum {{ player.mavsum }} • Bosqich {{ player.bosqich }}</div>
+                        </div>
+
+                        <div class="player-score">{{ player.ball }}</div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

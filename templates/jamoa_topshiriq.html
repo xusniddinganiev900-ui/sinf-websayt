@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamoaviy Topshiriqlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .tasks-container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .task-card {
+            background: white; border-radius: 15px; padding: 25px; margin-bottom: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        .task-card.completed { border: 2px solid #27ae60; background: #f0fff4; }
+        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .task-title { font-size: 1.3em; font-weight: bold; }
+        .task-reward {
+            background: linear-gradient(135deg, #f5af19, #f12711); color: white;
+            padding: 5px 15px; border-radius: 20px; font-size: 0.9em;
+        }
+        .task-desc { color: #666; margin-bottom: 15px; }
+        .progress-container { margin-top: 15px; }
+        .progress-bar { height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+        .progress-fill {
+            height: 100%; background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.5s; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+            color: white; font-size: 0.8em; font-weight: bold;
+        }
+        .progress-text { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9em; color: #666; }
+        .completed-badge {
+            display: flex; align-items: center; gap: 10px; color: #27ae60;
+            font-weight: bold; font-size: 1.1em;
+        }
+        [data-theme="dark"] .task-card { background: #2d2d2d; }
+        [data-theme="dark"] .task-card.completed { background: #1a3d1a; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/' + (foydalanuvchi.avatar if foydalanuvchi.avatar else 'ogil.svg')) }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('yutuqlar_sahifa') }}"><span class="icon">🏅</span> Yutuqlar</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="tasks-container">
+                <h1>👥 Jamoaviy Topshiriqlar</h1>
+                <p style="color: #666; margin-bottom: 20px;">Sinf bo'lib birgalikda bajaring va mukofot oling!</p>
+
+                {% for task in topshiriqlar %}
+                <div class="task-card {% if task.bajarilgan %}completed{% endif %}">
+                    <div class="task-header">
+                        <div class="task-title">{{ task.nomi }}</div>
+                        <div class="task-reward">+{{ task.mukofot }} ball</div>
+                    </div>
+                    <div class="task-desc">{{ task.tavsif }}</div>
+
+                    {% if task.bajarilgan %}
+                    <div class="completed-badge">
+                        <span style="font-size: 1.5em;">✅</span> Bajarildi!
+                    </div>
+                    {% else %}
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ (task.progress / task.maqsad * 100)|int }}%">
+                                {{ (task.progress / task.maqsad * 100)|int }}%
+                            </div>
+                        </div>
+                        <div class="progress-text">
+                            <span>{{ task.progress }} / {{ task.maqsad }}</span>
+                            <span>{{ task.maqsad - task.progress }} qoldi</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

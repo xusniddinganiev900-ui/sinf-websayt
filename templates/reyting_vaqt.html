@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reyting - {{ 'Haftalik' if tur == 'hafta' else 'Oylik' if tur == 'oy' else 'Barcha vaqt' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .rating-container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab {
+            padding: 12px 25px; border-radius: 25px; cursor: pointer;
+            background: #e0e0e0; color: #666; text-decoration: none; transition: all 0.3s;
+        }
+        .tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .rating-list { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .rating-item {
+            display: flex; align-items: center; padding: 15px 20px;
+            border-bottom: 1px solid #eee; transition: background 0.3s;
+        }
+        .rating-item:hover { background: #f8f9ff; }
+        .rating-item:last-child { border-bottom: none; }
+        .rank {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; margin-right: 15px;
+        }
+        .rank-1 { background: linear-gradient(135deg, #f5af19, #f12711); color: white; }
+        .rank-2 { background: linear-gradient(135deg, #bdc3c7, #95a5a6); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #d68910, #b9770e); color: white; }
+        .rank-other { background: #e0e0e0; color: #666; }
+        .player-info { flex: 1; }
+        .player-name { font-weight: bold; font-size: 1.1em; }
+        .player-total { font-size: 0.9em; color: #999; }
+        .player-ball {
+            font-size: 1.3em; font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .empty-state { text-align: center; padding: 50px; color: #666; }
+        [data-theme="dark"] .rating-list { background: #2d2d2d; }
+        [data-theme="dark"] .rating-item { border-color: #444; }
+        [data-theme="dark"] .rating-item:hover { background: #3d3d5d; }
+        [data-theme="dark"] .tab { background: #3d3d3d; color: #aaa; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/' + (foydalanuvchi.avatar if foydalanuvchi.avatar else 'ogil.svg')) }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('statistika') }}"><span class="icon">📊</span> Statistika</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="rating-container">
+                <h1>🏆 Reyting</h1>
+
+                <div class="tabs">
+                    <a href="{{ url_for('reyting_vaqt', tur='hafta') }}" class="tab {{ 'active' if tur == 'hafta' else '' }}">📅 Haftalik</a>
+                    <a href="{{ url_for('reyting_vaqt', tur='oy') }}" class="tab {{ 'active' if tur == 'oy' else '' }}">📆 Oylik</a>
+                    <a href="{{ url_for('reyting_vaqt', tur='hammasi') }}" class="tab {{ 'active' if tur == 'hammasi' else '' }}">🌟 Barcha vaqt</a>
+                </div>
+
+                {% if reyting %}
+                <div class="rating-list">
+                    {% for item in reyting %}
+                    <div class="rating-item">
+                        <div class="rank {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% else %}rank-other{% endif %}">
+                            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                        </div>
+                        <div class="player-info">
+                            <div class="player-name">{{ item.ism }}</div>
+                            <div class="player-total">Jami: {{ item.jami_ball }} ball</div>
+                        </div>
+                        <div class="player-ball">{{ item.ball }} ball</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div style="font-size: 4em; margin-bottom: 20px;">📊</div>
+                    <p>Bu davrda hali ball yig'ilmagan</p>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ism }} - Kabinet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .profile-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid white;
+            background: white;
+            margin-bottom: 15px;
+        }
+        .profile-banner h1 {
+            color: white;
+            margin-bottom: 5px;
+        }
+        .profile-banner p {
+            color: rgba(255,255,255,0.8);
+        }
+        .profile-stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .profile-stat-item {
+            text-align: center;
+            color: white;
+        }
+        .profile-stat-item .value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .profile-stat-item .label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .profile-body {
+            padding: 30px;
+        }
+        .profile-section {
+            margin-bottom: 25px;
+        }
+        .profile-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .bio-text {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .bio-empty {
+            color: #999;
+            font-style: italic;
+        }
+        .gadgets-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .gadget-item {
+            width: 50px;
+            height: 50px;
+            background: #f0f4ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gadget-item img {
+            width: 35px;
+            height: 35px;
+        }
+        .btn-edit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Chap menyu -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="{{ url_for('kabinet') }}">
+                        <span class="icon">👤</span> Kabinet
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('magazin') }}">
+                        <span class="icon">🛒</span> Magazin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- Asosiy kontent -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Mening kabinetim</h1>
+                <p>Profilingiz haqida ma'lumotlar</p>
+            </header>
+
+            <div class="profile-card">
+                <div class="profile-banner">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img class="profile-avatar-large" src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                    <h1>{{ ism }}</h1>
+                    <p>{{ foydalanuvchi.jins|capitalize if foydalanuvchi.jins else 'O\'quvchi' }}</p>
+
+                    <div class="profile-stats-row">
+                        <div class="profile-stat-item">
+                            <div class="value">{{ foydalanuvchi.ball }}</div>
+                            <div class="label">Ball</div>
+                        </div>
+                        <div class="profile-stat-item">
+                            <div class="value">{{ foydalanuvchi.bosqich }}</div>
+                            <div class="label">Bosqich</div>
+                        </div>
+                        <div class="profile-stat-item">
+                            <div class="value">{{ foydalanuvchi.mavsum }}</div>
+                            <div class="label">Mavsum</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-body">
+                    <div class="profile-section">
+                        <h3>📝 Men haqimda</h3>
+                        {% if foydalanuvchi.malumot %}
+                        <div class="bio-text">{{ foydalanuvchi.malumot }}</div>
+                        {% else %}
+                        <div class="bio-text bio-empty">Ma'lumot kiritilmagan. Sozlamalar sahifasidan qo'shishingiz mumkin.</div>
+                        {% endif %}
+                    </div>
+
+                    {% if foydalanuvchi.gadjetlar and foydalanuvchi.gadjetlar|length > 0 %}
+                    <div class="profile-section">
+                        <h3>🎁 Mening gadjetlarim</h3>
+                        <div class="gadgets-list">
+                            {% for gadjet in foydalanuvchi.gadjetlar %}
+                            <div class="gadget-item" title="{{ gadjet }}">
+                                <img src="{{ url_for('static', filename='images/' + gadjet + '.svg') }}" alt="{{ gadjet }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="profile-section">
+                        <h3>🎨 Shaxsiylashtirish</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <a href="{{ url_for('avatar_tanlash') }}" style="flex: 1; min-width: 120px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 12px; text-decoration: none; text-align: center;">
+                                <div style="font-size: 1.5em;">👤</div>
+                                <div>Avatar</div>
+                            </a>
+                            <a href="{{ url_for('mavzu_tanlash') }}" style="flex: 1; min-width: 120px; background: linear-gradient(135deg, #f5af19, #f12711); color: white; padding: 15px; border-radius: 12px; text-decoration: none; text-align: center;">
+                                <div style="font-size: 1.5em;">🎨</div>
+                                <div>Mavzu</div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="profile-section" style="text-align: center;">
+                        <a href="{{ url_for('sozlamalar') }}" class="btn-edit">⚙️ Profilni tahrirlash</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

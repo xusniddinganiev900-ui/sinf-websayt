@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O'yin - 5-sinf Informatika</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Chap menyu -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('kabinet') }}">
+                        <span class="icon">👤</span> Kabinet
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('magazin') }}">
+                        <span class="icon">🛒</span> Magazin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- O'yin maydoni -->
+        <main class="main-content game-content">
+            <!-- O'yin tanlash ekrani -->
+            <div id="game-select-screen" class="game-area">
+                <h1 style="text-align: center; margin-bottom: 30px;">O'yin tanlang</h1>
+                <div class="game-cards">
+                    <div class="game-card" onclick="testOyiniBoshlash()">
+                        <div class="game-card-icon">📚</div>
+                        <h3>Test O'yini</h3>
+                        <p>Informatika savollariga javob bering va ball to'plang</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/qogoz_oyin'">
+                        <div class="game-card-icon">📝</div>
+                        <h3>Qog'oz O'yini</h3>
+                        <p>Do'stlar bilan kulgili hikoya yarating!</p>
+                        <span class="game-card-players">5+ o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/zar_oyin'">
+                        <div class="game-card-icon">🎲</div>
+                        <h3>Zar O'yini</h3>
+                        <p>Zarlarni tashlab ball yuting! Ikki 6 = 50 ball!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/tqq_oyin'">
+                        <div class="game-card-icon">✂️</div>
+                        <h3>Tosh-Qaychi-Qog'oz</h3>
+                        <p>Kompyuterni yengib ball yuting!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/matematika_oyin'">
+                        <div class="game-card-icon">🧮</div>
+                        <h3>Matematika Musobaqasi</h3>
+                        <p>60 soniyada imkon qadar ko'p misol yeching!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/soz_oyin'">
+                        <div class="game-card-icon">🔤</div>
+                        <h3>So'z O'yini</h3>
+                        <p>Aralashgan harflardan so'z tuzing!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/viktorina'">
+                        <div class="game-card-icon">🧠</div>
+                        <h3>Viktorina</h3>
+                        <p>Turli mavzularda bilimingizni sinab ko'ring!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/xotira_oyin'">
+                        <div class="game-card-icon">🃏</div>
+                        <h3>Xotira O'yini</h3>
+                        <p>Bir xil kartalarni topib ball yig'ing!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/mafiya_oyin'" style="background: linear-gradient(135deg, #c0392b, #e74c3c);">
+                        <div class="game-card-icon">🔪</div>
+                        <h3>Mafiya</h3>
+                        <p>Mafiyani toping yoki fuqarolarni yo'q qiling!</p>
+                        <span class="game-card-players">4-10 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/sudoku'">
+                        <div class="game-card-icon">🔢</div>
+                        <h3>Sudoku</h3>
+                        <p>Klassik mantiqiy o'yin - 9x9 katakni to'ldiring!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/game2048'" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                        <div class="game-card-icon">2️⃣0️⃣4️⃣8️⃣</div>
+                        <h3>2048</h3>
+                        <p>Raqamlarni birlashtiring va 2048 ga yeting!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/hangman'">
+                        <div class="game-card-icon">🪢</div>
+                        <h3>Osilgan odam</h3>
+                        <p>Yashirin so'zni topish uchun harflarni taxmin qiling!</p>
+                        <span class="game-card-players">1 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/tictactoe'" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                        <div class="game-card-icon">⭕❌</div>
+                        <h3>X-O Online</h3>
+                        <p>Do'stingiz bilan klassik X-O o'yinini o'ynang!</p>
+                        <span class="game-card-players">2 o'yinchi</span>
+                    </div>
+                    <div class="game-card" onclick="window.location.href='/quiz_battle'" style="background: linear-gradient(135deg, #1abc9c, #16a085);">
+                        <div class="game-card-icon">⚔️</div>
+                        <h3>Quiz Battle</h3>
+                        <p>Bilim bellashuvida do'stlaringiz bilan raqobatlashing!</p>
+                        <span class="game-card-players">2+ o'yinchi</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test o'yini qismi -->
+            <div id="test-game-container" style="display: none;">
+                <div class="game-header">
+                    <div class="game-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Mavsum</span>
+                            <span class="stat-value" id="mavsum">{{ foydalanuvchi.mavsum }}</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Bosqich</span>
+                            <span class="stat-value" id="bosqich">{{ foydalanuvchi.bosqich }}/20</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Ball</span>
+                            <span class="stat-value" id="ball">{{ foydalanuvchi.ball }}</span>
+                        </div>
+                        <div class="stat-box timer-box">
+                            <span class="stat-label">Vaqt</span>
+                            <span class="stat-value" id="vaqt">30</span>
+                        </div>
+                    </div>
+                    <button onclick="ortgaQaytish()" class="btn-back-game">← Ortga</button>
+                </div>
+
+                <div class="game-area">
+                    <div id="start-screen" class="game-screen">
+                        <h1>5-sinf Informatika</h1>
+                        <p>O'yin qoidalari:</p>
+                        <ul class="rules-list">
+                            <li>Har bir to'g'ri javob uchun 1 ball</li>
+                            <li>20 bosqich, 10 mavsum</li>
+                            <li>Vaqt har 3 bosqichda kamayadi</li>
+                        </ul>
+                        <button onclick="oyinBoshlash()" class="btn btn-play">O'yinni boshlash</button>
+                    </div>
+
+                <div id="question-screen" class="game-screen" style="display: none;">
+                    <div class="question-box">
+                        <h2 id="savol-text">Savol yuklanmoqda...</h2>
+                    </div>
+                    <div class="answers-grid" id="javoblar">
+                        <!-- Javoblar JavaScript orqali qo'shiladi -->
+                    </div>
+                    <div class="bonus-buttons">
+                        <button onclick="bonusIshlatish('vaqt_5')" class="bonus-btn" id="bonus-vaqt">
+                            ⏱️ +5 soniya (<span id="vaqt-count">0</span>)
+                        </button>
+                        <button onclick="bonusIshlatish('5050')" class="bonus-btn" id="bonus-5050">
+                            🎯 50/50 (<span id="5050-count">0</span>)
+                        </button>
+                        <button onclick="bonusIshlatish('otkazish')" class="bonus-btn" id="bonus-otkazish">
+                            ⏭️ O'tkazish (<span id="otkazish-count">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="result-screen" class="game-screen" style="display: none;">
+                    <div id="result-content">
+                        <!-- Natija JavaScript orqali qo'shiladi -->
+                    </div>
+                    <button onclick="keyingiSavol()" class="btn btn-next">Keyingi savol</button>
+                </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .game-cards {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        .game-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 250px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        .game-card-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+        .game-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .game-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .game-card-players {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .btn-back-game {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+        .btn-back-game:hover {
+            background: #c0392b;
+        }
+        [data-theme="dark"] .game-card {
+            background: #2d2d2d;
+        }
+        [data-theme="dark"] .game-card h3 {
+            color: #fff;
+        }
+        [data-theme="dark"] .game-card p {
+            color: #aaa;
+        }
+    </style>
+
+    <script>
+        let joriy_savol = null;
+        let timer = null;
+        let qolgan_vaqt = 30;
+        let togri_javob = -1;
+
+        function testOyiniBoshlash() {
+            document.getElementById('game-select-screen').style.display = 'none';
+            document.getElementById('test-game-container').style.display = 'block';
+        }
+
+        function ortgaQaytish() {
+            if (timer) clearInterval(timer);
+            document.getElementById('test-game-container').style.display = 'none';
+            document.getElementById('game-select-screen').style.display = 'block';
+            document.getElementById('start-screen').style.display = 'block';
+            document.getElementById('question-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'none';
+        }
+
+        // Bonuslar sonini yuklash
+        const bonuslar = {{ (foydalanuvchi.bonuslar or {}) | tojson }};
+        document.getElementById('vaqt-count').textContent = bonuslar['vaqt_5'] || 0;
+        document.getElementById('5050-count').textContent = bonuslar['5050'] || 0;
+        document.getElementById('otkazish-count').textContent = bonuslar['otkazish'] || 0;
+
+        function oyinBoshlash() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('question-screen').style.display = 'block';
+            savolYuklash();
+        }
+
+        function savolYuklash() {
+            fetch('/savol_olish')
+                .then(response => response.json())
+                .then(data => {
+                    joriy_savol = data;
+                    togri_javob = data.togri;
+
+                    document.getElementById('savol-text').textContent = data.savol;
+                    document.getElementById('bosqich').textContent = data.bosqich + '/20';
+                    document.getElementById('mavsum').textContent = data.mavsum;
+
+                    const javoblarDiv = document.getElementById('javoblar');
+                    javoblarDiv.innerHTML = '';
+
+                    data.javoblar.forEach((javob, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'answer-btn';
+                        btn.textContent = javob;
+                        btn.onclick = () => javobTanlash(index);
+                        btn.id = 'javob-' + index;
+                        javoblarDiv.appendChild(btn);
+                    });
+
+                    // Taymerni boshlash
+                    qolgan_vaqt = data.vaqt;
+                    document.getElementById('vaqt').textContent = qolgan_vaqt;
+                    taymerBoshlash();
+                });
+        }
+
+        function taymerBoshlash() {
+            if (timer) clearInterval(timer);
+
+            timer = setInterval(() => {
+                qolgan_vaqt--;
+                document.getElementById('vaqt').textContent = qolgan_vaqt;
+
+                if (qolgan_vaqt <= 5) {
+                    document.querySelector('.timer-box').classList.add('warning');
+                }
+
+                if (qolgan_vaqt <= 0) {
+                    clearInterval(timer);
+                    vaqtTugadi();
+                }
+            }, 1000);
+        }
+
+        function vaqtTugadi() {
+            document.getElementById('question-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+            document.getElementById('result-content').innerHTML = `
+                <div class="result-wrong">
+                    <h2>Vaqt tugadi!</h2>
+                    <p>To'g'ri javob: ${joriy_savol.javoblar[togri_javob]}</p>
+                </div>
+            `;
+        }
+
+        function javobTanlash(index) {
+            clearInterval(timer);
+
+            const formData = new FormData();
+            formData.append('javob', index);
+            formData.append('togri', togri_javob);
+
+            fetch('/javob_tekshirish', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('question-screen').style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+
+                if (data.togri) {
+                    document.getElementById('result-content').innerHTML = `
+                        <div class="result-correct">
+                            <h2>To'g'ri!</h2>
+                            <p>+1 ball</p>
+                            <p>Jami: ${data.ball} ball</p>
+                        </div>
+                    `;
+                    document.getElementById('ball').textContent = data.ball;
+                    document.getElementById('bosqich').textContent = data.bosqich + '/20';
+                    document.getElementById('mavsum').textContent = data.mavsum;
+                } else {
+                    document.getElementById('result-content').innerHTML = `
+                        <div class="result-wrong">
+                            <h2>Noto'g'ri!</h2>
+                            <p>To'g'ri javob: ${joriy_savol.javoblar[togri_javob]}</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function keyingiSavol() {
+            document.querySelector('.timer-box').classList.remove('warning');
+            document.getElementById('result-screen').style.display = 'none';
+            document.getElementById('question-screen').style.display = 'block';
+            savolYuklash();
+        }
+
+        function bonusIshlatish(bonus_id) {
+            const formData = new FormData();
+            formData.append('bonus_id', bonus_id);
+
+            fetch('/bonus_ishlatish', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (bonus_id === 'vaqt_5') {
+                        // +5 soniya qo'shish
+                        qolgan_vaqt += 5;
+                        document.getElementById('vaqt').textContent = qolgan_vaqt;
+                        document.getElementById('vaqt-count').textContent = data.qoldi;
+                        document.querySelector('.timer-box').classList.remove('warning');
+                    } else if (bonus_id === '5050') {
+                        // 2 ta noto'g'ri javobni yashirish
+                        let yashirilgan = 0;
+                        for (let i = 0; i < 4 && yashirilgan < 2; i++) {
+                            if (i !== togri_javob) {
+                                document.getElementById('javob-' + i).style.visibility = 'hidden';
+                                yashirilgan++;
+                            }
+                        }
+                        document.getElementById('5050-count').textContent = data.qoldi;
+                    } else if (bonus_id === 'otkazish') {
+                        // Savolni o'tkazish - yangi savol yuklash
+                        document.getElementById('otkazish-count').textContent = data.qoldi;
+                        clearInterval(timer);
+                        savolYuklash();
+                    }
+                } else {
+                    alert(data.xato || 'Bonus mavjud emas!');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

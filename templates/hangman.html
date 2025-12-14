@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman - O'yin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .hangman-container { max-width: 500px; margin: 0 auto; text-align: center; }
+        .hangman-drawing {
+            font-size: 1.5em;
+            font-family: monospace;
+            white-space: pre;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .word-display {
+            font-size: 2.5em;
+            letter-spacing: 15px;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .key-btn {
+            width: 40px;
+            height: 45px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .key-btn:hover { transform: scale(1.1); }
+        .key-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .key-btn.correct { background: #27ae60; }
+        .key-btn.wrong { background: #e74c3c; }
+        .status { font-size: 1.3em; margin: 20px 0; }
+        .game-result { padding: 20px; border-radius: 15px; margin: 20px 0; }
+        .game-result.win { background: #d4edda; color: #155724; }
+        .game-result.lose { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('oyin') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Osilgan odam</h1>
+
+            <div class="hangman-container">
+                <div class="hangman-drawing" id="drawing"></div>
+                <div class="word-display" id="wordDisplay"></div>
+                <div class="status">Qolgan urinishlar: <span id="attempts">6</span></div>
+                <div class="keyboard" id="keyboard"></div>
+                <div class="game-result" id="result" style="display: none;"></div>
+                <button onclick="newGame()" style="padding: 15px 40px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">Yangi o'yin</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const drawings = [
+            `  +---+
+  |   |
+      |
+      |
+      |
+      |
+=========`,
+            `  +---+
+  |   |
+  O   |
+      |
+      |
+      |
+=========`,
+            `  +---+
+  |   |
+  O   |
+  |   |
+      |
+      |
+=========`,
+            `  +---+
+  |   |
+  O   |
+ /|   |
+      |
+      |
+=========`,
+            `  +---+
+  |   |
+  O   |
+ /|\\  |
+      |
+      |
+=========`,
+            `  +---+
+  |   |
+  O   |
+ /|\\  |
+ /    |
+      |
+=========`,
+            `  +---+
+  |   |
+  O   |
+ /|\\  |
+ / \\  |
+      |
+=========`
+        ];
+
+        let word = '';
+        let guessed = [];
+        let wrong = 0;
+
+        const alphabet = 'abcdefghijklmnopqrstuvwxyz\''.split('');
+
+        function initKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+            alphabet.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.className = 'key-btn';
+                btn.textContent = letter.toUpperCase();
+                btn.onclick = () => guess(letter, btn);
+                keyboard.appendChild(btn);
+            });
+        }
+
+        function updateDisplay() {
+            document.getElementById('drawing').textContent = drawings[wrong];
+            document.getElementById('attempts').textContent = 6 - wrong;
+
+            let display = '';
+            for (let char of word) {
+                if (guessed.includes(char.toLowerCase()) || char === ' ' || char === '\'') {
+                    display += char;
+                } else {
+                    display += '_';
+                }
+            }
+            document.getElementById('wordDisplay').textContent = display;
+        }
+
+        function guess(letter, btn) {
+            if (guessed.includes(letter)) return;
+            guessed.push(letter);
+
+            if (word.toLowerCase().includes(letter)) {
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                wrong++;
+            }
+            btn.disabled = true;
+
+            updateDisplay();
+            checkGameEnd();
+        }
+
+        function checkGameEnd() {
+            const result = document.getElementById('result');
+            const wordLower = word.toLowerCase();
+            const won = [...wordLower].every(c => guessed.includes(c) || c === ' ' || c === '\'');
+
+            if (won) {
+                result.className = 'game-result win';
+                result.innerHTML = `Tabriklaymiz! Siz yutdingiz! So'z: <strong>${word}</strong>`;
+                result.style.display = 'block';
+                disableAllKeys();
+                fetch('/hangman_yutuq', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(r => r.json()).then(data => {
+                    result.innerHTML += `<br>+${data.ball} ball!`;
+                });
+            } else if (wrong >= 6) {
+                result.className = 'game-result lose';
+                result.innerHTML = `Afsuski yutqazdingiz! So'z: <strong>${word}</strong>`;
+                result.style.display = 'block';
+                disableAllKeys();
+            }
+        }
+
+        function disableAllKeys() {
+            document.querySelectorAll('.key-btn').forEach(btn => btn.disabled = true);
+        }
+
+        function newGame() {
+            fetch('/hangman_soz').then(r => r.json()).then(data => {
+                word = data.soz;
+                guessed = [];
+                wrong = 0;
+                document.getElementById('result').style.display = 'none';
+                initKeyboard();
+                updateDisplay();
+            });
+        }
+
+        newGame();
+    </script>
+</body>
+</html>

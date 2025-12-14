@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Chap menyu -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('kabinet') }}">
+                        <span class="icon">👤</span> Kabinet
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('magazin') }}">
+                        <span class="icon">🛒</span> Magazin
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- Chat -->
+        <main class="main-content chat-content">
+            <div class="chat-container">
+                <!-- Online foydalanuvchilar ro'yxati -->
+                <div class="online-users">
+                    <h3>Online foydalanuvchilar</h3>
+                    <ul class="users-list" id="users-list">
+                        {% for user_name, user_data in online_users.items() %}
+                        <li class="user-item {% if user_name == ism %}current-user{% endif %}">
+                            <div class="user-avatar-small">
+                                {% if user_data.jins == 'qiz' %}
+                                <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="{{ user_name }}">
+                                {% else %}
+                                <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="{{ user_name }}">
+                                {% endif %}
+                            </div>
+                            <span class="user-name">{{ user_name }}</span>
+                            <span class="online-dot"></span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Chat maydoni -->
+                <div class="chat-area">
+                    <div class="chat-header">
+                        <h2>Sinf chati</h2>
+                        <p>Online sinfdoshlar bilan suhbatlashing</p>
+                        <span id="connection-status" class="status-connected">Ulangan</span>
+                    </div>
+
+                    <div class="chat-messages" id="chat-messages">
+                        {% if xabarlar %}
+                            {% for xabar in xabarlar %}
+                            <div class="chat-message {% if xabar.username == ism %}own-message{% else %}other-message{% endif %}">
+                                <div class="message-sender">{{ xabar.username }}</div>
+                                <div class="message-text">{{ xabar.message }}</div>
+                                <div class="message-time">{{ xabar.time }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="welcome-message" id="welcome-msg">
+                            <p>Sinfingiz bilan suhbatlashing!</p>
+                            <p class="hint">Xabar yozing va Enter bosing</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" id="message-input" placeholder="Xabar yozing..." onkeypress="handleKeyPress(event)">
+                        <button onclick="sendMessage()" class="btn btn-send">Yuborish</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const currentUser = "{{ ism }}";
+        const socket = io();
+
+        // Serverga ulanish
+        socket.on('connect', function() {
+            console.log('Serverga ulandi');
+            document.getElementById('connection-status').textContent = 'Ulangan';
+            document.getElementById('connection-status').className = 'status-connected';
+
+            // Chatga qo'shilish
+            socket.emit('join', {username: currentUser});
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Serverdan uzildi');
+            document.getElementById('connection-status').textContent = 'Uzilgan';
+            document.getElementById('connection-status').className = 'status-disconnected';
+        });
+
+        // Yangi xabar kelganda
+        socket.on('new_message', function(data) {
+            addMessage(data.username, data.message, data.time, data.username === currentUser);
+        });
+
+        // Foydalanuvchi qo'shilganda
+        socket.on('user_joined', function(data) {
+            if (data.username !== currentUser) {
+                showNotification(data.username + ' chatga qo\'shildi');
+            }
+        });
+
+        // Foydalanuvchi ketganda
+        socket.on('user_left', function(data) {
+            showNotification(data.username + ' chatdan chiqdi');
+        });
+
+        // Xabar yuborish
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+
+            if (message) {
+                const time = new Date().toLocaleTimeString('uz-UZ', {hour: '2-digit', minute: '2-digit'});
+
+                socket.emit('send_message', {
+                    username: currentUser,
+                    message: message,
+                    time: time
+                });
+
+                input.value = '';
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addMessage(sender, text, time, isOwn) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const welcomeMsg = document.getElementById('welcome-msg');
+            if (welcomeMsg) {
+                welcomeMsg.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message ' + (isOwn ? 'own-message' : 'other-message');
+            messageDiv.innerHTML = `
+                <div class="message-sender">${sender}</div>
+                <div class="message-text">${text}</div>
+                <div class="message-time">${time}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showNotification(text) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const notifDiv = document.createElement('div');
+            notifDiv.className = 'chat-notification';
+            notifDiv.textContent = text;
+            messagesDiv.appendChild(notifDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Sahifa yuklanganda oxiriga scroll qilish
+        window.onload = function() {
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+
+        // Sahifadan chiqishda
+        window.onbeforeunload = function() {
+            socket.emit('leave', {username: currentUser});
+        };
+    </script>
+</body>
+</html>

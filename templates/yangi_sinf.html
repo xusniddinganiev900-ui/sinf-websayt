@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yangi sinf yaratish</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .yangi-sinf-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .yangi-sinf-box {
+            background: white;
+            padding: 50px;
+            border-radius: 25px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .yangi-sinf-box h1 {
+            color: #11998e;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .yangi-sinf-box .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .icon-select {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .icon-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .icon-option:hover {
+            border-color: #11998e;
+        }
+
+        .icon-option.selected {
+            border-color: #11998e;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .icon-option input {
+            display: none;
+        }
+
+        .btn-yaratish {
+            width: 100%;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s;
+        }
+
+        .btn-yaratish:hover {
+            transform: scale(1.02);
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="yangi-sinf-container">
+        <div class="yangi-sinf-box">
+            <h1>Yangi sinf yaratish</h1>
+            <p class="subtitle">O'z sinfingiz uchun web-sayt oching</p>
+
+            {% if xato %}
+            <div class="xato-box">
+                <p class="xato">{{ xato }}</p>
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('sinf_yaratish') }}" method="POST">
+                <div class="form-group">
+                    <label>Sinf belgisini tanlang:</label>
+                    <div class="icon-select">
+                        <label class="icon-option selected">
+                            <input type="radio" name="icon" value="school" checked>
+                        </label>
+                        <label class="icon-option">
+                            <input type="radio" name="icon" value="star">
+                        </label>
+                        <label class="icon-option">
+                            <input type="radio" name="icon" value="book">
+                        </label>
+                        <label class="icon-option">
+                            <input type="radio" name="icon" value="rocket">
+                        </label>
+                        <label class="icon-option">
+                            <input type="radio" name="icon" value="heart">
+                        </label>
+                        <label class="icon-option">
+                            <input type="radio" name="icon" value="fire">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sinf_nomi">Sinf nomi:</label>
+                    <input type="text" id="sinf_nomi" name="sinf_nomi" placeholder="Masalan: 5-A sinf" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="tavsif">Qisqa tavsif:</label>
+                    <input type="text" id="tavsif" name="tavsif" placeholder="Masalan: 15-maktab 5-A sinfi">
+                </div>
+
+                <button type="submit" class="btn-yaratish">Sinf yaratish</button>
+            </form>
+
+            <a href="{{ url_for('sinflar') }}" class="back-link">Ortga qaytish</a>
+        </div>
+    </div>
+
+    <script>
+        // Icon tanlash
+        document.querySelectorAll('.icon-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Iconlarni ko'rsatish
+        const icons = {
+            'school': '🏫',
+            'star': '⭐',
+            'book': '📚',
+            'rocket': '🚀',
+            'heart': '❤️',
+            'fire': '🔥'
+        };
+
+        document.querySelectorAll('.icon-option').forEach(option => {
+            const input = option.querySelector('input');
+            option.textContent = icons[input.value];
+            option.appendChild(input);
+        });
+    </script>
+</body>
+</html>

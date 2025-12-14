@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 400px; margin: 0 auto; text-align: center; }
+        .timer-circle {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            margin: 30px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+        }
+        .timer-inner {
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .timer-display { font-size: 4em; font-weight: bold; color: #333; }
+        .timer-label { color: #666; margin-top: 5px; }
+        .timer-btns { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
+        .timer-btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        .timer-btn.start { background: #27ae60; color: white; }
+        .timer-btn.pause { background: #f39c12; color: white; }
+        .timer-btn.reset { background: #e74c3c; color: white; }
+        .mode-btns { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+        }
+        .mode-btn.active { background: #667eea; color: white; }
+        .stats-box { background: white; padding: 25px; border-radius: 15px; margin-top: 30px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .stat-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .stat-value { font-weight: bold; color: #667eea; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Pomodoro Timer</h1>
+
+            <div class="container">
+                <div class="mode-btns">
+                    <button class="mode-btn active" onclick="setMode(25, this)">O'qish (25)</button>
+                    <button class="mode-btn" onclick="setMode(5, this)">Dam (5)</button>
+                    <button class="mode-btn" onclick="setMode(15, this)">Uzun dam (15)</button>
+                </div>
+
+                <div class="timer-circle">
+                    <div class="timer-inner">
+                        <div class="timer-display" id="display">25:00</div>
+                        <div class="timer-label" id="label">Tayyor</div>
+                    </div>
+                </div>
+
+                <div class="timer-btns">
+                    <button class="timer-btn start" id="startBtn" onclick="startTimer()">Boshlash</button>
+                    <button class="timer-btn reset" onclick="resetTimer()">Qayta</button>
+                </div>
+
+                <div class="stats-box">
+                    <h3 style="margin-bottom: 15px;">Sizning statistikangiz</h3>
+                    <div class="stat-item">
+                        <span>Jami sessiyalar</span>
+                        <span class="stat-value">{{ stats.jami_sessiya }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Jami vaqt</span>
+                        <span class="stat-value">{{ (stats.jami_daqiqa / 60)|round(1) }} soat</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let totalSeconds = 25 * 60;
+        let remainingSeconds = totalSeconds;
+        let timerInterval = null;
+        let isRunning = false;
+
+        function updateDisplay() {
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            document.getElementById('display').textContent =
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function setMode(minutes, btn) {
+            if (isRunning) return;
+            totalSeconds = minutes * 60;
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function startTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                document.getElementById('startBtn').textContent = 'Davom';
+                document.getElementById('label').textContent = 'Pauza';
+            } else {
+                isRunning = true;
+                document.getElementById('startBtn').textContent = 'Pauza';
+                document.getElementById('label').textContent = 'Ishlayapti...';
+
+                timerInterval = setInterval(() => {
+                    remainingSeconds--;
+                    updateDisplay();
+
+                    if (remainingSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        document.getElementById('label').textContent = 'Tugadi!';
+                        document.getElementById('startBtn').textContent = 'Boshlash';
+
+                        // Ovoz
+                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleUs8j9markup');
+                        audio.play().catch(() => {});
+
+                        // Ball saqlash
+                        const daqiqa = Math.floor(totalSeconds / 60);
+                        fetch('/pomodoro_saqlash', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({daqiqa})
+                        }).then(r => r.json()).then(data => {
+                            if (data.ball > 0) {
+                                alert(`Ajoyib! +${data.ball} ball oldingiz!`);
+                                location.reload();
+                            }
+                        });
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+            document.getElementById('startBtn').textContent = 'Boshlash';
+            document.getElementById('label').textContent = 'Tayyor';
+        }
+    </script>
+</body>
+</html>

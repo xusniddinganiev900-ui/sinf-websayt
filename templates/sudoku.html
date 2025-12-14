@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku - O'yin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .sudoku-container { max-width: 450px; margin: 0 auto; }
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #333;
+            border: 3px solid #333;
+            margin: 20px 0;
+        }
+        .sudoku-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            background: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sudoku-cell:hover { background: #e8f4fd; }
+        .sudoku-cell.fixed { background: #f0f0f0; color: #333; cursor: default; }
+        .sudoku-cell.selected { background: #667eea; color: white; }
+        .sudoku-cell.error { background: #ffcccc; }
+        .sudoku-cell:nth-child(3n) { border-right: 2px solid #333; }
+        .sudoku-cell:nth-child(n+19):nth-child(-n+27),
+        .sudoku-cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid #333; }
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .num-btn {
+            padding: 15px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+        }
+        .num-btn:hover { transform: scale(1.05); }
+        .difficulty-btns { display: flex; gap: 10px; margin-bottom: 20px; }
+        .diff-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+        }
+        .diff-btn.active { background: #667eea; color: white; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('oyin') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Sudoku</h1>
+
+            <div class="sudoku-container">
+                <div class="difficulty-btns">
+                    <button class="diff-btn active" onclick="newGame('oson')">Oson</button>
+                    <button class="diff-btn" onclick="newGame('orta')">O'rta</button>
+                    <button class="diff-btn" onclick="newGame('qiyin')">Qiyin</button>
+                </div>
+
+                <div class="sudoku-grid" id="grid"></div>
+
+                <div class="number-pad">
+                    <button class="num-btn" onclick="setNumber(1)">1</button>
+                    <button class="num-btn" onclick="setNumber(2)">2</button>
+                    <button class="num-btn" onclick="setNumber(3)">3</button>
+                    <button class="num-btn" onclick="setNumber(4)">4</button>
+                    <button class="num-btn" onclick="setNumber(5)">5</button>
+                    <button class="num-btn" onclick="setNumber(6)">6</button>
+                    <button class="num-btn" onclick="setNumber(7)">7</button>
+                    <button class="num-btn" onclick="setNumber(8)">8</button>
+                    <button class="num-btn" onclick="setNumber(9)">9</button>
+                    <button class="num-btn" onclick="setNumber(0)" style="background: #e74c3c;">X</button>
+                </div>
+
+                <button onclick="checkSolution()" style="width: 100%; padding: 15px; margin-top: 20px; background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">Tekshirish</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let board = [];
+        let solution = [];
+        let selected = null;
+        let qiyinlik = 'oson';
+
+        function generateSudoku(difficulty) {
+            // Sodda sudoku generatori
+            solution = [
+                [5,3,4,6,7,8,9,1,2],
+                [6,7,2,1,9,5,3,4,8],
+                [1,9,8,3,4,2,5,6,7],
+                [8,5,9,7,6,1,4,2,3],
+                [4,2,6,8,5,3,7,9,1],
+                [7,1,3,9,2,4,8,5,6],
+                [9,6,1,5,3,7,2,8,4],
+                [2,8,7,4,1,9,6,3,5],
+                [3,4,5,2,8,6,1,7,9]
+            ];
+
+            // Aralashtirish
+            for (let i = 0; i < 20; i++) {
+                let r1 = Math.floor(Math.random() * 3);
+                let r2 = Math.floor(Math.random() * 3);
+                let block = Math.floor(Math.random() * 3) * 3;
+                for (let j = 0; j < 9; j++) {
+                    [solution[block + r1][j], solution[block + r2][j]] = [solution[block + r2][j], solution[block + r1][j]];
+                }
+            }
+
+            board = solution.map(row => [...row]);
+
+            // Kataklarni yashirish
+            let hide = difficulty === 'oson' ? 35 : difficulty === 'orta' ? 45 : 55;
+            for (let i = 0; i < hide; i++) {
+                let r = Math.floor(Math.random() * 9);
+                let c = Math.floor(Math.random() * 9);
+                board[r][c] = 0;
+            }
+        }
+
+        function renderBoard() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'sudoku-cell';
+                    if (board[i][j] !== 0) {
+                        cell.textContent = board[i][j];
+                        if (solution[i][j] === board[i][j]) {
+                            cell.classList.add('fixed');
+                        }
+                    }
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.onclick = () => selectCell(cell, i, j);
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function selectCell(cell, row, col) {
+            if (cell.classList.contains('fixed')) return;
+            document.querySelectorAll('.sudoku-cell').forEach(c => c.classList.remove('selected'));
+            cell.classList.add('selected');
+            selected = { row, col, cell };
+        }
+
+        function setNumber(num) {
+            if (!selected) return;
+            board[selected.row][selected.col] = num;
+            selected.cell.textContent = num || '';
+            selected.cell.classList.remove('error');
+        }
+
+        function checkSolution() {
+            let correct = true;
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if (board[i][j] !== solution[i][j]) {
+                        correct = false;
+                        const cell = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+                        if (!cell.classList.contains('fixed')) {
+                            cell.classList.add('error');
+                        }
+                    }
+                }
+            }
+            if (correct) {
+                fetch('/sudoku_yutuq', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({qiyinlik: qiyinlik})
+                }).then(r => r.json()).then(data => {
+                    alert(`Tabriklaymiz! +${data.ball} ball oldingiz!`);
+                    newGame(qiyinlik);
+                });
+            }
+        }
+
+        function newGame(diff) {
+            qiyinlik = diff;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            generateSudoku(diff);
+            renderBoard();
+            selected = null;
+        }
+
+        generateSudoku('oson');
+        renderBoard();
+    </script>
+</body>
+</html>

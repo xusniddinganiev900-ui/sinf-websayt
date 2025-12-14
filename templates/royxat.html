@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kabinet ochish</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="royxat-box">
+            <h1>Kabinet ochish</h1>
+
+            {% if xato %}
+            <div class="xato-box">
+                <p class="xato">{{ xato }}</p>
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('royxatdan_otish') }}" method="POST">
+                <input type="hidden" name="sinf_id" value="{{ sinf_id }}">
+                <div class="form-wrapper">
+                    <div class="form-left">
+                        <div class="form-group">
+                            <label for="ism">Ismingiz:</label>
+                            <input type="text" id="ism" name="ism" placeholder="Ismingizni kiriting" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="parol">Parol:</label>
+                            <div style="position: relative;">
+                                <input type="password" id="parol" name="parol" placeholder="Parol o'ylab toping" required style="padding-right: 45px;">
+                                <button type="button" onclick="togglePassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.2em; opacity: 0.6;" id="toggleBtn">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="eslatma">Parolni eslatib turadigan so'z:</label>
+                            <input type="text" id="eslatma" name="eslatma" placeholder="Masalan: sevimli rangim">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="malumot">O'zingiz haqingizda ma'lumot yozing iltimos:</label>
+                            <textarea id="malumot" name="malumot" rows="4" placeholder="O'zingiz haqingizda yozing..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-right">
+                        <label>Rasmingizni tanlang:</label>
+                        <div class="jins-tanlash">
+                            <div class="jins-option">
+                                <input type="radio" id="ogil" name="jins" value="ogil" checked>
+                                <label for="ogil" class="jins-label">
+                                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="O'g'il bola">
+                                    <span>O'g'il bola</span>
+                                </label>
+                            </div>
+                            <div class="jins-option">
+                                <input type="radio" id="qiz" name="jins" value="qiz">
+                                <label for="qiz" class="jins-label">
+                                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Qiz bola">
+                                    <span>Qiz bola</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-kirish">Kabinet ochish</button>
+            </form>
+
+            <a href="{{ url_for('index', sinf_id=sinf_id) }}" class="btn btn-orqaga">Orqaga</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const parol = document.getElementById('parol');
+            const btn = document.getElementById('toggleBtn');
+            if (parol.type === 'password') {
+                parol.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                parol.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>

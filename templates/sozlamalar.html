@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sozlamalar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .settings-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .settings-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+        }
+        .setting-label span {
+            font-weight: 600;
+            color: #333;
+        }
+        .setting-label small {
+            color: #999;
+            margin-top: 3px;
+        }
+        .setting-input {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            width: 200px;
+        }
+        .setting-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        /* Toggle switch */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        /* Theme buttons */
+        .theme-options {
+            display: flex;
+            gap: 10px;
+        }
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .theme-btn.active {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+        .theme-light { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .theme-dark { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+        .theme-green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .theme-orange { background: linear-gradient(135deg, #f12711 0%, #f5af19 100%); }
+        /* Success message */
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success-msg.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error-msg.show {
+            display: block;
+        }
+        /* Volume slider */
+        .volume-slider {
+            width: 150px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Chap menyu -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('kabinet') }}">
+                        <span class="icon">👤</span> Kabinet
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('magazin') }}">
+                        <span class="icon">🛒</span> Magazin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- Asosiy kontent -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>⚙️ Sozlamalar</h1>
+                <p>Profilingizni sozlang</p>
+            </header>
+
+            <div class="settings-container">
+                <!-- Xabarlar -->
+                <div class="success-msg" id="successMsg">Muvaffaqiyatli saqlandi!</div>
+                <div class="error-msg" id="errorMsg"></div>
+
+                <!-- Profil sozlamalari -->
+                <div class="settings-section">
+                    <h2>👤 Profil</h2>
+                    <form id="profileForm">
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span>Ism</span>
+                                <small>Boshqa foydalanuvchilarga ko'rinadi</small>
+                            </div>
+                            <input type="text" class="setting-input" id="newName" value="{{ ism }}" placeholder="Yangi ism">
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span>Ma'lumot</span>
+                                <small>O'zingiz haqida qisqacha</small>
+                            </div>
+                            <input type="text" class="setting-input" id="newMalumot" value="{{ foydalanuvchi.malumot or '' }}" placeholder="Bio...">
+                        </div>
+                        <div class="setting-item">
+                            <div></div>
+                            <button type="submit" class="btn-save">Saqlash</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Parol sozlamalari -->
+                <div class="settings-section">
+                    <h2>🔒 Xavfsizlik</h2>
+                    <form id="passwordForm">
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span>Joriy parol</span>
+                                <small>Hozirgi parolingiz</small>
+                            </div>
+                            <input type="password" class="setting-input" id="oldPassword" placeholder="Joriy parol">
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span>Yangi parol</span>
+                                <small>Yangi parol kiriting</small>
+                            </div>
+                            <input type="password" class="setting-input" id="newPassword" placeholder="Yangi parol">
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span>Parolni tasdiqlang</span>
+                                <small>Yangi parolni qayta kiriting</small>
+                            </div>
+                            <input type="password" class="setting-input" id="confirmPassword" placeholder="Tasdiqlash">
+                        </div>
+                        <div class="setting-item">
+                            <div></div>
+                            <button type="submit" class="btn-save">Parolni o'zgartirish</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Ovoz sozlamalari -->
+                <div class="settings-section">
+                    <h2>🔊 Ovoz va musiqa</h2>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>Ovoz effektlari</span>
+                            <small>O'yin ovozlari</small>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="soundEffects" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>Fon musiqasi</span>
+                            <small>Sayt musiqasi</small>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="bgMusic">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>Ovoz balandligi</span>
+                            <small>Umumiy ovoz</small>
+                        </div>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+                    </div>
+                </div>
+
+                <!-- Ekran sozlamalari -->
+                <div class="settings-section">
+                    <h2>🎨 Ko'rinish</h2>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>Tema</span>
+                            <small>Ranglar sxemasi</small>
+                        </div>
+                        <div class="theme-options">
+                            <button class="theme-btn theme-light active" data-theme="light" title="Standart"></button>
+                            <button class="theme-btn theme-dark" data-theme="dark" title="Qorong'u"></button>
+                            <button class="theme-btn theme-green" data-theme="green" title="Yashil"></button>
+                            <button class="theme-btn theme-orange" data-theme="orange" title="To'q sariq"></button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>Bildirishnomalar</span>
+                            <small>Xabar kelganda ogohlantirish</small>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notifications" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Profil saqlash
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const newName = document.getElementById('newName').value.trim();
+            const newMalumot = document.getElementById('newMalumot').value.trim();
+
+            fetch('/sozlamalar/profil', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ism: newName, malumot: newMalumot})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.message || 'Profil yangilandi!');
+                    if (data.ism_ozgardi) {
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                } else {
+                    showError(data.xato || 'Xatolik yuz berdi');
+                }
+            });
+        });
+
+        // Parol o'zgartirish
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const oldPass = document.getElementById('oldPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
+
+            if (newPass !== confirmPass) {
+                showError('Yangi parollar mos kelmaydi!');
+                return;
+            }
+
+            if (newPass.length < 3) {
+                showError('Parol kamida 3 ta belgi bo\'lishi kerak!');
+                return;
+            }
+
+            fetch('/sozlamalar/parol', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({eski_parol: oldPass, yangi_parol: newPass})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Parol muvaffaqiyatli o\'zgartirildi!');
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    showError(data.xato || 'Xatolik yuz berdi');
+                }
+            });
+        });
+
+        // Tema tanlash
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
+            }
+        }
+
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const theme = this.dataset.theme;
+                localStorage.setItem('theme', theme);
+                applyTheme(theme);
+                showSuccess('Tema saqlandi!');
+            });
+        });
+
+        // Sozlamalarni yuklash
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.querySelector(`.theme-btn[data-theme="${savedTheme}"]`)?.classList.add('active');
+        applyTheme(savedTheme);
+
+        const savedVolume = localStorage.getItem('volume') || 70;
+        document.getElementById('volumeSlider').value = savedVolume;
+
+        document.getElementById('volumeSlider').addEventListener('input', function() {
+            localStorage.setItem('volume', this.value);
+        });
+
+        // Toggle saqlash
+        document.querySelectorAll('.toggle-switch input').forEach(toggle => {
+            const saved = localStorage.getItem(toggle.id);
+            if (saved !== null) toggle.checked = saved === 'true';
+
+            toggle.addEventListener('change', function() {
+                localStorage.setItem(this.id, this.checked);
+            });
+        });
+
+        function showSuccess(msg) {
+            const el = document.getElementById('successMsg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

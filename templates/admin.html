@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .admin-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-card .label {
+            color: #666;
+            font-size: 14px;
+        }
+        .users-table {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .table-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        .search-box {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            width: 250px;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+        .btn-ball {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-ball:hover {
+            background: #e67e22;
+        }
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 25px;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #555;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+        .modal-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .modal-btn.primary {
+            background: #e74c3c;
+            color: white;
+        }
+        .modal-btn.secondary {
+            background: #eee;
+            color: #333;
+        }
+
+        /* Quick actions */
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .quick-action {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .quick-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .quick-action .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body style="background: #f5f6fa; min-height: 100vh;">
+    <div class="admin-container">
+        <a href="{{ url_for('home') }}" class="back-btn">
+            <span>←</span> Orqaga
+        </a>
+
+        <div class="admin-header">
+            <h1>Admin Panel</h1>
+            <p>{{ sinf_nomi }} - Boshqaruv paneli</p>
+        </div>
+
+        <!-- Statistika -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">👥</div>
+                <div class="number">{{ total_users }}</div>
+                <div class="label">Jami o'quvchilar</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🟢</div>
+                <div class="number">{{ online_users }}</div>
+                <div class="label">Online</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <div class="number">{{ total_balls }}</div>
+                <div class="label">Jami ball</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🏆</div>
+                <div class="number">{{ top_player }}</div>
+                <div class="label">Eng yuqori ball</div>
+            </div>
+        </div>
+
+        <!-- Tezkor amallar -->
+        <div class="quick-actions">
+            <div class="quick-action" onclick="openAddBallModal()">
+                <div class="icon">💎</div>
+                <div>Ball qo'shish</div>
+            </div>
+            <div class="quick-action" onclick="openResetModal()">
+                <div class="icon">🔄</div>
+                <div>Parol tiklash</div>
+            </div>
+            <div class="quick-action" onclick="exportData()">
+                <div class="icon">📤</div>
+                <div>Export</div>
+            </div>
+        </div>
+
+        <!-- Foydalanuvchilar jadvali -->
+        <div class="users-table">
+            <div class="table-header">
+                <h2>O'quvchilar ro'yxati</h2>
+                <input type="text" class="search-box" placeholder="Qidirish..." onkeyup="searchUsers(this.value)">
+            </div>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>O'quvchi</th>
+                        <th>Ball</th>
+                        <th>Mavsum</th>
+                        <th>Bosqich</th>
+                        <th>Status</th>
+                        <th>Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for name, user in users.items() %}
+                    <tr data-name="{{ name }}">
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <div class="user-info">
+                                {% if user.avatar and user.avatar != 'oddiy' %}
+                                <img class="user-avatar" src="{{ url_for('static', filename='images/' + user.avatar + '.svg') }}" alt="Avatar">
+                                {% elif user.jins == 'qiz' %}
+                                <img class="user-avatar" src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                                {% else %}
+                                <img class="user-avatar" src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                                {% endif %}
+                                <span>{{ name }}</span>
+                            </div>
+                        </td>
+                        <td><strong>{{ user.ball }}</strong></td>
+                        <td>{{ user.mavsum }}</td>
+                        <td>{{ user.bosqich }}</td>
+                        <td>
+                            {% if user.online %}
+                            <span class="status-badge status-online">Online</span>
+                            {% else %}
+                            <span class="status-badge status-offline">Offline</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="action-btn btn-ball" onclick="editBall('{{ name }}', {{ user.ball }})">Ball</button>
+                            <button class="action-btn btn-edit" onclick="resetPassword('{{ name }}')">Parol</button>
+                            <button class="action-btn btn-delete" onclick="deleteUser('{{ name }}')">O'chirish</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Ball o'zgartirish modal -->
+    <div class="modal" id="ballModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ball o'zgartirish</h3>
+                <button class="close-modal" onclick="closeModal('ballModal')">&times;</button>
+            </div>
+            <form id="ballForm">
+                <input type="hidden" id="ballUsername" name="username">
+                <div class="form-group">
+                    <label>O'quvchi: <span id="ballUserDisplay"></span></label>
+                </div>
+                <div class="form-group">
+                    <label>Joriy ball: <span id="currentBall"></span></label>
+                </div>
+                <div class="form-group">
+                    <label>Yangi ball:</label>
+                    <input type="number" id="newBall" name="ball" required>
+                </div>
+                <button type="submit" class="modal-btn primary">Saqlash</button>
+                <button type="button" class="modal-btn secondary" onclick="closeModal('ballModal')">Bekor qilish</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Parol tiklash modal -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Parol tiklash</h3>
+                <button class="close-modal" onclick="closeModal('passwordModal')">&times;</button>
+            </div>
+            <form id="passwordForm">
+                <input type="hidden" id="passwordUsername" name="username">
+                <div class="form-group">
+                    <label>O'quvchi: <span id="passwordUserDisplay"></span></label>
+                </div>
+                <div class="form-group">
+                    <label>Yangi parol:</label>
+                    <input type="text" id="newPassword" name="password" required>
+                </div>
+                <button type="submit" class="modal-btn primary">Tiklash</button>
+                <button type="button" class="modal-btn secondary" onclick="closeModal('passwordModal')">Bekor qilish</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hammaga ball qo'shish modal -->
+    <div class="modal" id="addAllBallModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Hammaga ball qo'shish</h3>
+                <button class="close-modal" onclick="closeModal('addAllBallModal')">&times;</button>
+            </div>
+            <form id="addAllBallForm">
+                <div class="form-group">
+                    <label>Qo'shiladigan ball:</label>
+                    <input type="number" id="addBallAmount" name="amount" required>
+                </div>
+                <button type="submit" class="modal-btn primary">Hammaga qo'shish</button>
+                <button type="button" class="modal-btn secondary" onclick="closeModal('addAllBallModal')">Bekor qilish</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function editBall(username, currentBall) {
+            document.getElementById('ballUsername').value = username;
+            document.getElementById('ballUserDisplay').textContent = username;
+            document.getElementById('currentBall').textContent = currentBall;
+            document.getElementById('newBall').value = currentBall;
+            document.getElementById('ballModal').classList.add('active');
+        }
+
+        function resetPassword(username) {
+            document.getElementById('passwordUsername').value = username;
+            document.getElementById('passwordUserDisplay').textContent = username;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        function openAddBallModal() {
+            document.getElementById('addBallAmount').value = '';
+            document.getElementById('addAllBallModal').classList.add('active');
+        }
+
+        function openResetModal() {
+            alert('Biror o\'quvchini tanlang va "Parol" tugmasini bosing');
+        }
+
+        function deleteUser(username) {
+            if (confirm(`"${username}" ni o'chirishni xohlaysizmi?`)) {
+                fetch('/admin/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: username})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('O\'quvchi o\'chirildi!');
+                        location.reload();
+                    } else {
+                        alert(data.xato || 'Xatolik yuz berdi');
+                    }
+                });
+            }
+        }
+
+        function searchUsers(query) {
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            query = query.toLowerCase();
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name').toLowerCase();
+                row.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
+        function exportData() {
+            window.location.href = '/admin/export';
+        }
+
+        // Ball form
+        document.getElementById('ballForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('ballUsername').value;
+            const ball = document.getElementById('newBall').value;
+
+            fetch('/admin/ball', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: username, ball: parseInt(ball)})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Ball o\'zgartirildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato || 'Xatolik yuz berdi');
+                }
+            });
+        });
+
+        // Password form
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('passwordUsername').value;
+            const password = document.getElementById('newPassword').value;
+
+            fetch('/admin/password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: username, password: password})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Parol o\'zgartirildi!');
+                    closeModal('passwordModal');
+                } else {
+                    alert(data.xato || 'Xatolik yuz berdi');
+                }
+            });
+        });
+
+        // Add all ball form
+        document.getElementById('addAllBallForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const amount = document.getElementById('addBallAmount').value;
+
+            fetch('/admin/ball_all', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({amount: parseInt(amount)})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Hammaga ${amount} ball qo'shildi!`);
+                    location.reload();
+                } else {
+                    alert(data.xato || 'Xatolik yuz berdi');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

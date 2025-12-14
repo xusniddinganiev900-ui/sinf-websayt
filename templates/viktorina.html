@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viktorina</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .game-container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .topic-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+        .topic-card {
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            padding: 30px; border-radius: 15px; text-align: center; cursor: pointer;
+            transition: transform 0.3s; font-size: 1.2em;
+        }
+        .topic-card:hover { transform: scale(1.05); }
+        .topic-card .icon { font-size: 2em; display: block; margin-bottom: 10px; }
+        .question-container { display: none; }
+        .question-box {
+            background: white; padding: 25px; border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1); margin: 20px 0;
+        }
+        .question-text { font-size: 1.3em; margin-bottom: 20px; }
+        .answer-btn {
+            display: block; width: 100%; padding: 15px; margin: 10px 0;
+            background: #f5f5f5; border: 2px solid #ddd; border-radius: 10px;
+            cursor: pointer; font-size: 1em; text-align: left; transition: all 0.3s;
+        }
+        .answer-btn:hover { background: #e8f4fd; border-color: #667eea; }
+        .answer-btn.correct { background: #d5f4e6; border-color: #27ae60; }
+        .answer-btn.wrong { background: #fce4e4; border-color: #e74c3c; }
+        .progress-bar { height: 10px; background: #e0e0e0; border-radius: 5px; margin: 20px 0; }
+        .progress-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 5px; transition: width 0.3s; }
+        .score-display { text-align: center; font-size: 1.2em; margin: 15px 0; }
+        .result-screen { display: none; text-align: center; }
+        .result-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .result-score { font-size: 4em; color: #667eea; font-weight: bold; }
+        .btn-restart {
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            border: none; padding: 15px 40px; border-radius: 25px; font-size: 1.1em; cursor: pointer; margin-top: 20px;
+        }
+        [data-theme="dark"] .question-box { background: #2d2d2d; }
+        [data-theme="dark"] .answer-btn { background: #3d3d3d; border-color: #555; }
+        [data-theme="dark"] .result-box { background: #2d2d2d; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/' + (foydalanuvchi.avatar if foydalanuvchi.avatar else 'ogil.svg')) }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('oyin') }}"><span class="icon">🎮</span> O'yinlar</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="game-container">
+                <h1>🧠 Viktorina</h1>
+
+                <div id="topicScreen">
+                    <p>Mavzuni tanlang:</p>
+                    <div class="topic-grid">
+                        <div class="topic-card" onclick="startQuiz('tarix')">
+                            <span class="icon">📜</span> Tarix
+                        </div>
+                        <div class="topic-card" onclick="startQuiz('geografiya')">
+                            <span class="icon">🌍</span> Geografiya
+                        </div>
+                        <div class="topic-card" onclick="startQuiz('fan')">
+                            <span class="icon">🔬</span> Fan
+                        </div>
+                        <div class="topic-card" onclick="startQuiz('sport')">
+                            <span class="icon">⚽</span> Sport
+                        </div>
+                    </div>
+                </div>
+
+                <div id="questionScreen" class="question-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress" style="width: 0%"></div>
+                    </div>
+                    <div class="score-display">To'g'ri: <span id="score">0</span>/5</div>
+
+                    <div class="question-box">
+                        <div class="question-text" id="questionText">Savol yuklanmoqda...</div>
+                        <div id="answersContainer"></div>
+                    </div>
+                </div>
+
+                <div id="resultScreen" class="result-screen">
+                    <div class="result-box">
+                        <h2>🎉 Viktorina tugadi!</h2>
+                        <div class="result-score" id="finalScore">0</div>
+                        <p>to'g'ri javob</p>
+                        <p id="earnedBall">+0 ball</p>
+                        <button class="btn-restart" onclick="location.reload()">🔄 Qayta o'ynash</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function startQuiz(topic) {
+            document.getElementById('topicScreen').style.display = 'none';
+            document.getElementById('questionScreen').style.display = 'block';
+
+            fetch(`/viktorina_savollar/${topic}`)
+                .then(r => r.json())
+                .then(data => {
+                    questions = data.savollar;
+                    showQuestion();
+                });
+        }
+
+        function showQuestion() {
+            if (currentQuestion >= questions.length) {
+                endQuiz();
+                return;
+            }
+
+            answered = false;
+            const q = questions[currentQuestion];
+            document.getElementById('questionText').textContent = q.savol;
+            document.getElementById('progress').style.width = `${(currentQuestion / questions.length) * 100}%`;
+
+            const container = document.getElementById('answersContainer');
+            container.innerHTML = q.javoblar.map((j, i) =>
+                `<button class="answer-btn" onclick="checkAnswer(${i}, ${q.togri})">${j}</button>`
+            ).join('');
+        }
+
+        function checkAnswer(selected, correct) {
+            if (answered) return;
+            answered = true;
+
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons[correct].classList.add('correct');
+
+            if (selected === correct) {
+                score++;
+                document.getElementById('score').textContent = score;
+            } else {
+                buttons[selected].classList.add('wrong');
+            }
+
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+            }, 1500);
+        }
+
+        function endQuiz() {
+            document.getElementById('questionScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+
+            fetch('/viktorina_yakunla', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({togri: score})
+            }).then(r => r.json()).then(data => {
+                document.getElementById('earnedBall').textContent = `+${data.ball} ball`;
+            });
+        }
+    </script>
+</body>
+</html>

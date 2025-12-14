@@ -1,0 +1,41 @@
+{
+  "Muhammadakbra": {
+    "parol": "Salom20215",
+    "eslatma": "hayir osha yillar",
+    "jins": "ogil",
+    "malumot": "Men Rasulov Muhammadakbar 2014-yil 11-dekabrda tug`ilganman biz oilada 7 kishimiz buvim,dadam,oyim,men,katta ukam,singlim,kichkina ukam.buvimning ismi Xanifaxon buvim  1951-yil 10-mayda tug`ilgan.Dadamning ismi G`aniyev Xusnidin dadam 1988-yil 25-noyabirda tug`ilgan.Oyim G`aniyeva Madina oyim 1992-yil 3-noyabrda tug`ilgan.",
+    "online": false,
+    "ball": 99750,
+    "bosqich": 17,
+    "mavsum": 2,
+    "avatar": "astronavt",
+    "gadjetlar": [
+      "kozoynok",
+      "shlyapa",
+      "medal",
+      "telefon",
+      "kamera",
+      "planshet",
+      "quloqchin",
+      "soat"
+    ],
+    "bonuslar": {
+      "ai_yordam": 3,
+      "yordamchi": 4,
+      "vaqt_1": 5
+    }
+  },
+  "Muhammadziyo": {
+    "parol": "Salom20215",
+    "eslatma": "hayir osha yillar",
+    "jins": "ogil",
+    "malumot": "",
+    "ball": 0,
+    "bosqich": 1,
+    "mavsum": 1,
+    "avatar": "oddiy",
+    "gadjetlar": [],
+    "online": false,
+    "bonuslar": {}
+  }
+}

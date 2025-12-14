@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#4FC3F7"/>
+
+  <!-- Face -->
+  <circle cx="50" cy="45" r="25" fill="#FFCC80"/>
+
+  <!-- Hair -->
+  <path d="M25 40 Q25 20 50 20 Q75 20 75 40 Q75 30 50 28 Q25 30 25 40" fill="#5D4037"/>
+
+  <!-- Eyes -->
+  <circle cx="40" cy="42" r="4" fill="#333"/>
+  <circle cx="60" cy="42" r="4" fill="#333"/>
+  <circle cx="41" cy="41" r="1.5" fill="#FFF"/>
+  <circle cx="61" cy="41" r="1.5" fill="#FFF"/>
+
+  <!-- Eyebrows -->
+  <path d="M35 36 Q40 34 45 36" stroke="#5D4037" stroke-width="2" fill="none"/>
+  <path d="M55 36 Q60 34 65 36" stroke="#5D4037" stroke-width="2" fill="none"/>
+
+  <!-- Nose -->
+  <path d="M50 45 L48 52 L52 52" stroke="#E6A860" stroke-width="1.5" fill="none"/>
+
+  <!-- Smile -->
+  <path d="M42 56 Q50 62 58 56" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Body/Shirt -->
+  <path d="M30 75 Q30 70 50 70 Q70 70 70 75 L75 98 L25 98 Z" fill="#2196F3"/>
+
+  <!-- Collar -->
+  <path d="M45 70 L50 78 L55 70" stroke="#1976D2" stroke-width="2" fill="none"/>
+</svg>

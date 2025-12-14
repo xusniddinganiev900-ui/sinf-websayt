@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tosh-Qaychi-Qog'oz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .tqq-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .tqq-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .tqq-title {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .battle-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+        }
+        .player-side {
+            text-align: center;
+        }
+        .player-choice {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            margin-bottom: 10px;
+            transition: transform 0.3s;
+        }
+        .player-choice.win { box-shadow: 0 0 30px rgba(39, 174, 96, 0.6); }
+        .player-choice.lose { box-shadow: 0 0 30px rgba(231, 76, 60, 0.6); }
+        .vs-text {
+            font-size: 2em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .choices {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .choice-btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 3px solid #ddd;
+            background: white;
+            font-size: 2.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .choice-btn:hover {
+            transform: scale(1.1);
+            border-color: #9b59b6;
+            box-shadow: 0 10px 30px rgba(155, 89, 182, 0.3);
+        }
+        .choice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        .result-text.win {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+        }
+        .result-text.lose {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+        }
+        .result-text.draw {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+            color: #856404;
+        }
+        .result-text.show { display: block; }
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .score-item {
+            text-align: center;
+        }
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .score-value.green { color: #27ae60; }
+        .score-value.red { color: #e74c3c; }
+        .score-value.yellow { color: #f39c12; }
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        [data-theme="dark"] .tqq-card { background: #2d2d2d; }
+        [data-theme="dark"] .score-board { background: #3d3d3d; }
+        [data-theme="dark"] .choice-btn { background: #3d3d3d; border-color: #555; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display" id="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+                <li class="nav-item active"><a href="{{ url_for('oyin') }}"><span class="icon">🎮</span> Game</a></li>
+                <li class="nav-item"><a href="{{ url_for('reyting') }}"><span class="icon">🏆</span> Reyting</a></li>
+                <li class="nav-item"><a href="{{ url_for('magazin') }}"><span class="icon">🛒</span> Magazin</a></li>
+                <li class="nav-item"><a href="{{ url_for('chat') }}"><span class="icon">💬</span> Chat</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="tqq-container">
+                <button class="btn-back" onclick="window.location.href='/oyin'">← Ortga</button>
+
+                <div class="tqq-card">
+                    <h1 class="tqq-title">✂️ Tosh-Qaychi-Qog'oz</h1>
+                    <p>Kompyuterni yengib ball yuting!</p>
+
+                    <div class="score-board">
+                        <div class="score-item">
+                            <div class="score-value green" id="wins">0</div>
+                            <div>Yutish</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value yellow" id="draws">0</div>
+                            <div>Durrang</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value red" id="losses">0</div>
+                            <div>Yutqazish</div>
+                        </div>
+                    </div>
+
+                    <div class="battle-area">
+                        <div class="player-side">
+                            <div class="player-choice" id="user-choice">❓</div>
+                            <p><strong>Siz</strong></p>
+                        </div>
+                        <div class="vs-text">VS</div>
+                        <div class="player-side">
+                            <div class="player-choice" id="ai-choice">🤖</div>
+                            <p><strong>Kompyuter</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="result-text" id="result-text"></div>
+
+                    <p>Tanlovingizni qiling:</p>
+                    <div class="choices">
+                        <button class="choice-btn" onclick="play('tosh')" id="btn-tosh">🪨</button>
+                        <button class="choice-btn" onclick="play('qogoz')" id="btn-qogoz">📄</button>
+                        <button class="choice-btn" onclick="play('qaychi')" id="btn-qaychi">✂️</button>
+                    </div>
+
+                    <p style="color: #666; font-size: 14px;">
+                        Yutish: +5 ball | Durrang: +2 ball | Yutqazish: 0 ball
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const emojis = { tosh: '🪨', qogoz: '📄', qaychi: '✂️' };
+        let wins = 0, draws = 0, losses = 0;
+
+        function play(choice) {
+            const btns = document.querySelectorAll('.choice-btn');
+            btns.forEach(btn => btn.disabled = true);
+
+            document.getElementById('user-choice').textContent = emojis[choice];
+            document.getElementById('ai-choice').textContent = '🤔';
+
+            fetch('/tqq_oynash', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({tanlov: choice})
+            })
+            .then(r => r.json())
+            .then(data => {
+                setTimeout(() => {
+                    if (data.success) {
+                        document.getElementById('ai-choice').textContent = emojis[data.ai_choice];
+
+                        const userEl = document.getElementById('user-choice');
+                        const aiEl = document.getElementById('ai-choice');
+                        const resultEl = document.getElementById('result-text');
+
+                        userEl.classList.remove('win', 'lose');
+                        aiEl.classList.remove('win', 'lose');
+                        resultEl.classList.remove('win', 'lose', 'draw', 'show');
+
+                        if (data.natija === 'yutdingiz') {
+                            resultEl.textContent = '🎉 Yutdingiz! +5 ball';
+                            resultEl.classList.add('win', 'show');
+                            userEl.classList.add('win');
+                            wins++;
+                        } else if (data.natija === 'yutqazdingiz') {
+                            resultEl.textContent = '😔 Yutqazdingiz!';
+                            resultEl.classList.add('lose', 'show');
+                            aiEl.classList.add('win');
+                            losses++;
+                        } else {
+                            resultEl.textContent = '🤝 Durrang! +2 ball';
+                            resultEl.classList.add('draw', 'show');
+                            draws++;
+                        }
+
+                        document.getElementById('wins').textContent = wins;
+                        document.getElementById('draws').textContent = draws;
+                        document.getElementById('losses').textContent = losses;
+                        document.getElementById('ball-display').textContent = data.yangi_ball + ' ball';
+                    } else {
+                        alert(data.xato);
+                    }
+
+                    btns.forEach(btn => btn.disabled = false);
+                }, 500);
+            });
+        }
+    </script>
+</body>
+</html>

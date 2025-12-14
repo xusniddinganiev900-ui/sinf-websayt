@@ -1,0 +1,14 @@
+{
+  "bizning_sinf": {
+    "nomi": "Bizning sinf",
+    "tavsif": "Asosiy sinf",
+    "icon": "🏫",
+    "oquvchilar_soni": 6
+  },
+  "2_a": {
+    "nomi": "2-A",
+    "tavsif": "39-maktab",
+    "icon": "🏫",
+    "oquvchilar_soni": 1
+  }
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tug'ilgan kunlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 600px; margin: 0 auto; }
+        .my-birthday { background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; border-radius: 15px; color: white; margin-bottom: 25px; }
+        .birthday-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .birthday-icon { font-size: 2.5em; margin-right: 15px; }
+        .birthday-info { flex: 1; }
+        .birthday-name { font-weight: bold; font-size: 1.2em; }
+        .birthday-date { color: #666; }
+        .today { background: linear-gradient(135deg, #f5af19, #f12711); color: white; }
+        .today .birthday-date { color: rgba(255,255,255,0.9); }
+        input[type="date"] { padding: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 10px; background: rgba(255,255,255,0.2); color: white; font-size: 1em; }
+        .save-btn { padding: 12px 25px; background: white; color: #667eea; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Tug'ilgan kunlar</h1>
+
+            <div class="container">
+                <div class="my-birthday">
+                    <h3 style="margin-bottom: 15px;">Mening tug'ilgan kunim</h3>
+                    <input type="date" id="myBirthday" value="{{ foydalanuvchi.tugilgan_kun or '' }}">
+                    <button class="save-btn" onclick="saveBirthday()">Saqlash</button>
+                </div>
+
+                <h3 style="margin-bottom: 15px;">Sinfdoshlar tug'ilgan kunlari</h3>
+
+                {% set today = None %}
+                {% for kun in kunlar|sort(attribute='sana') %}
+                <div class="birthday-card {% if kun.sana[5:] == now().strftime('%m-%d') %}today{% endif %}">
+                    <div class="birthday-icon">🎂</div>
+                    <div class="birthday-info">
+                        <div class="birthday-name">{{ kun.ism }}</div>
+                        <div class="birthday-date">{{ kun.sana }}</div>
+                    </div>
+                    {% if kun.sana[5:] == now().strftime('%m-%d') %}
+                    <div style="font-size: 1.5em;">🎉</div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    Hali hech kim tug'ilgan kunini kiritmagan
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function saveBirthday() {
+            const sana = document.getElementById('myBirthday').value;
+            fetch('/tugilgan_kun_saqlash', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sana: sana})
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    alert('Saqlandi!');
+                    location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

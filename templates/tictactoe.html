@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Online</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .ttt-container { max-width: 400px; margin: 0 auto; text-align: center; }
+        .lobby { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .ttt-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 30px 0;
+        }
+        .ttt-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .ttt-cell:hover { transform: scale(1.05); }
+        .ttt-cell.disabled { cursor: not-allowed; opacity: 0.7; }
+        .status-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 1.2em;
+        }
+        .room-code {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 5px;
+        }
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        input[type="text"] {
+            padding: 15px;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            width: 150px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('oyin') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">X-O Online</h1>
+
+            <div class="ttt-container">
+                <div class="lobby" id="lobby">
+                    <h2>Do'stingiz bilan o'ynang!</h2>
+                    <button class="btn btn-primary" onclick="createRoom()">Xona yaratish</button>
+                    <div style="margin: 20px 0;">yoki</div>
+                    <input type="text" id="roomInput" placeholder="KOD" maxlength="4">
+                    <button class="btn btn-secondary" onclick="joinRoom()">Qo'shilish</button>
+                </div>
+
+                <div id="waiting" style="display: none;">
+                    <div class="status-box">
+                        <p>Xona kodi:</p>
+                        <div class="room-code" id="roomCode"></div>
+                        <p style="margin-top: 15px;">Do'stingizga yuboring!</p>
+                    </div>
+                    <p>Kutilmoqda...</p>
+                </div>
+
+                <div id="game" style="display: none;">
+                    <div class="status-box" id="turnStatus"></div>
+                    <div class="ttt-grid" id="board"></div>
+                    <button class="btn btn-secondary" onclick="location.reload()">Chiqish</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const socket = io();
+        let roomCode = '';
+        let mySymbol = '';
+        let myTurn = false;
+
+        function createRoom() {
+            socket.emit('ttt_xona_yaratish');
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('roomInput').value.toUpperCase();
+            if (code.length === 4) {
+                socket.emit('ttt_qoshilish', {room_code: code});
+            }
+        }
+
+        socket.on('ttt_xona_yaratildi', data => {
+            roomCode = data.room_code;
+            mySymbol = data.symbol;
+            document.getElementById('roomCode').textContent = roomCode;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('waiting').style.display = 'block';
+        });
+
+        socket.on('ttt_qoshildi', data => {
+            roomCode = data.room_code;
+            mySymbol = data.symbol;
+        });
+
+        socket.on('ttt_boshlandi', data => {
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('waiting').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            myTurn = (data.turn === mySymbol);
+            updateStatus();
+            renderBoard(['','','','','','','','','']);
+        });
+
+        socket.on('ttt_yangilandi', data => {
+            renderBoard(data.board);
+            if (data.winner) {
+                const won = data.winner === mySymbol;
+                document.getElementById('turnStatus').innerHTML = won ?
+                    '<span style="color: #27ae60;">Siz yutdingiz!</span>' :
+                    '<span style="color: #e74c3c;">Siz yutqazdingiz!</span>';
+                disableBoard();
+            } else if (data.draw) {
+                document.getElementById('turnStatus').innerHTML = '<span style="color: #f39c12;">Durrang!</span>';
+                disableBoard();
+            } else {
+                myTurn = (data.turn === mySymbol);
+                updateStatus();
+            }
+        });
+
+        socket.on('ttt_xato', data => {
+            alert(data.xabar);
+        });
+
+        function updateStatus() {
+            document.getElementById('turnStatus').innerHTML = myTurn ?
+                `<span style="color: #27ae60;">Sizning navbatingiz (${mySymbol})</span>` :
+                `<span style="color: #666;">Raqib o'ylayapti...</span>`;
+        }
+
+        function renderBoard(board) {
+            const container = document.getElementById('board');
+            container.innerHTML = '';
+            board.forEach((cell, i) => {
+                const div = document.createElement('div');
+                div.className = 'ttt-cell' + (!myTurn ? ' disabled' : '');
+                div.textContent = cell;
+                div.onclick = () => makeMove(i);
+                container.appendChild(div);
+            });
+        }
+
+        function makeMove(index) {
+            if (!myTurn) return;
+            socket.emit('ttt_yurish', {room_code: roomCode, index: index});
+        }
+
+        function disableBoard() {
+            document.querySelectorAll('.ttt-cell').forEach(c => c.classList.add('disabled'));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zar O'yini</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .dice-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .dice-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .dice-title {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dice-area {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 3px solid #e74c3c;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: #e74c3c;
+            transition: transform 0.3s;
+        }
+        .dice.rolling {
+            animation: roll 0.5s ease-in-out;
+        }
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .btn-roll {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-roll:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.4);
+        }
+        .btn-roll:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .attempts {
+            margin: 20px 0;
+            font-size: 1.1em;
+            color: #666;
+        }
+        .result-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        .result-box.show { display: block; }
+        .result-ball {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .result-ball.jackpot {
+            background: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .rules-box {
+            background: #fff3cd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .rules-box h4 { margin-bottom: 10px; color: #856404; }
+        .rules-box ul { margin: 0; padding-left: 20px; color: #856404; }
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        [data-theme="dark"] .dice-card { background: #2d2d2d; }
+        [data-theme="dark"] .rules-box { background: #3d3d3d; }
+        [data-theme="dark"] .rules-box h4, [data-theme="dark"] .rules-box ul { color: #ffc107; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display" id="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+                <li class="nav-item active"><a href="{{ url_for('oyin') }}"><span class="icon">🎮</span> Game</a></li>
+                <li class="nav-item"><a href="{{ url_for('reyting') }}"><span class="icon">🏆</span> Reyting</a></li>
+                <li class="nav-item"><a href="{{ url_for('magazin') }}"><span class="icon">🛒</span> Magazin</a></li>
+                <li class="nav-item"><a href="{{ url_for('chat') }}"><span class="icon">💬</span> Chat</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="dice-container">
+                <button class="btn-back" onclick="window.location.href='/oyin'">← Ortga</button>
+
+                <div class="dice-card">
+                    <h1 class="dice-title">🎲 Zar O'yini</h1>
+                    <p>Zarlarni tashlab ball yuting!</p>
+
+                    <div class="dice-area">
+                        <div class="dice" id="dice1">?</div>
+                        <div class="dice" id="dice2">?</div>
+                    </div>
+
+                    <div class="result-box" id="result-box">
+                        <p>Yutgan ball:</p>
+                        <div class="result-ball" id="result-ball">+0</div>
+                    </div>
+
+                    <p class="attempts">Qolgan urinishlar: <strong id="attempts">5</strong>/5</p>
+
+                    <button class="btn-roll" id="roll-btn" onclick="rollDice()">🎲 Tashlash</button>
+
+                    <div class="rules-box">
+                        <h4>Qoidalar:</h4>
+                        <ul>
+                            <li>Kuniga 5 marta tashlash mumkin</li>
+                            <li>Oddiy natija = zarlar yig'indisi (2-12 ball)</li>
+                            <li>Juftlik = zar × 5 ball (masalan: 4-4 = 20 ball)</li>
+                            <li>Ikki 6 = 50 ball! 🎉</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function rollDice() {
+            const btn = document.getElementById('roll-btn');
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+
+            btn.disabled = true;
+            dice1.classList.add('rolling');
+            dice2.classList.add('rolling');
+            dice1.textContent = '?';
+            dice2.textContent = '?';
+
+            // Random animation
+            let count = 0;
+            const interval = setInterval(() => {
+                dice1.textContent = Math.floor(Math.random() * 6) + 1;
+                dice2.textContent = Math.floor(Math.random() * 6) + 1;
+                count++;
+                if (count > 10) clearInterval(interval);
+            }, 100);
+
+            fetch('/zar_tashlash', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(r => r.json())
+            .then(data => {
+                setTimeout(() => {
+                    clearInterval(interval);
+                    dice1.classList.remove('rolling');
+                    dice2.classList.remove('rolling');
+
+                    if (data.success) {
+                        dice1.textContent = data.zar1;
+                        dice2.textContent = data.zar2;
+
+                        const resultBox = document.getElementById('result-box');
+                        const resultBall = document.getElementById('result-ball');
+                        resultBox.classList.add('show');
+                        resultBall.textContent = '+' + data.ball;
+
+                        if (data.ball >= 50) {
+                            resultBall.classList.add('jackpot');
+                        } else {
+                            resultBall.classList.remove('jackpot');
+                        }
+
+                        document.getElementById('ball-display').textContent = data.yangi_ball + ' ball';
+                        document.getElementById('attempts').textContent = data.qolgan_urinish;
+
+                        if (data.qolgan_urinish > 0) {
+                            btn.disabled = false;
+                        }
+                    } else {
+                        alert(data.xato);
+                        dice1.textContent = '?';
+                        dice2.textContent = '?';
+                    }
+                }, 1000);
+            });
+        }
+    </script>
+</body>
+</html>

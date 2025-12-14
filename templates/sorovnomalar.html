@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So'rovnomalar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 600px; margin: 0 auto; }
+        .create-poll { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .poll-card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .poll-question { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; }
+        .poll-option { display: flex; align-items: center; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .poll-option:hover { border-color: #667eea; }
+        .poll-option.voted { border-color: #667eea; background: #f0f4ff; }
+        .poll-bar { height: 8px; background: #eee; border-radius: 4px; flex: 1; margin: 0 15px; overflow: hidden; }
+        .poll-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; transition: width 0.3s; }
+        .poll-count { font-weight: bold; color: #667eea; min-width: 40px; text-align: right; }
+        input, textarea { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; margin-bottom: 10px; font-size: 1em; box-sizing: border-box; }
+        .btn { padding: 12px 25px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; cursor: pointer; }
+        .variant-input { display: flex; gap: 10px; margin-bottom: 10px; }
+        .variant-input input { flex: 1; margin: 0; }
+        .add-variant { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">So'rovnomalar</h1>
+
+            <div class="container">
+                <div class="create-poll">
+                    <h3 style="margin-bottom: 15px;">Yangi so'rovnoma</h3>
+                    <input type="text" id="pollQuestion" placeholder="Savol...">
+                    <div id="variants">
+                        <div class="variant-input"><input type="text" placeholder="Variant 1"></div>
+                        <div class="variant-input"><input type="text" placeholder="Variant 2"></div>
+                    </div>
+                    <button class="add-variant" onclick="addVariant()">+ Variant qo'shish</button>
+                    <button class="btn" onclick="createPoll()" style="margin-left: 10px;">Yaratish</button>
+                </div>
+
+                {% for sorov in sorovlar %}
+                <div class="poll-card">
+                    <div class="poll-question">{{ sorov.savol }}</div>
+                    <div style="font-size: 0.85em; color: #999; margin-bottom: 15px;">{{ sorov.muallif }} - {{ sorov.vaqt }}</div>
+                    {% set total = sorov.variantlar.values()|map('length')|sum %}
+                    {% for variant, ovozlar in sorov.variantlar.items() %}
+                    <div class="poll-option {% if ism in ovozlar %}voted{% endif %}" onclick="vote({{ sorov.id }}, '{{ variant }}')">
+                        <span>{{ variant }}</span>
+                        <div class="poll-bar">
+                            <div class="poll-fill" style="width: {{ (ovozlar|length / total * 100) if total > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="poll-count">{{ ovozlar|length }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; color: #999; padding: 40px;">Hali so'rovnomalar yo'q</div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function addVariant() {
+            const div = document.createElement('div');
+            div.className = 'variant-input';
+            div.innerHTML = `<input type="text" placeholder="Variant">`;
+            document.getElementById('variants').appendChild(div);
+        }
+
+        function createPoll() {
+            const savol = document.getElementById('pollQuestion').value.trim();
+            const inputs = document.querySelectorAll('#variants input');
+            const variantlar = [...inputs].map(i => i.value.trim()).filter(v => v);
+
+            if (!savol || variantlar.length < 2) {
+                alert('Savol va kamida 2 ta variant kerak');
+                return;
+            }
+
+            fetch('/sorovnoma_yaratish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({savol, variantlar})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+
+        function vote(sorovId, variant) {
+            fetch('/sorovnoma_ovoz', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sorov_id: sorovId, variant: variant})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

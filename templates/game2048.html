@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 - O'yin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .game-container { max-width: 400px; margin: 0 auto; text-align: center; }
+        .score-board { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .score-box { background: #bbada0; padding: 10px 20px; border-radius: 10px; color: white; }
+        .score-box span { display: block; font-size: 2em; font-weight: bold; }
+        .grid-2048 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: #bbada0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .tile {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            border-radius: 5px;
+            background: #cdc1b4;
+            transition: all 0.1s;
+        }
+        .tile-2 { background: #eee4da; color: #776e65; }
+        .tile-4 { background: #ede0c8; color: #776e65; }
+        .tile-8 { background: #f2b179; color: white; }
+        .tile-16 { background: #f59563; color: white; }
+        .tile-32 { background: #f67c5f; color: white; }
+        .tile-64 { background: #f65e3b; color: white; }
+        .tile-128 { background: #edcf72; color: white; font-size: 1.5em; }
+        .tile-256 { background: #edcc61; color: white; font-size: 1.5em; }
+        .tile-512 { background: #edc850; color: white; font-size: 1.5em; }
+        .tile-1024 { background: #edc53f; color: white; font-size: 1.2em; }
+        .tile-2048 { background: #edc22e; color: white; font-size: 1.2em; }
+        .game-over { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .game-over-content { background: white; padding: 40px; border-radius: 20px; text-align: center; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('oyin') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">2048</h1>
+
+            <div class="game-container">
+                <div class="score-board">
+                    <div class="score-box">Ochko<span id="score">0</span></div>
+                    <div class="score-box">Eng yaxshi<span id="best">0</span></div>
+                </div>
+
+                <div class="grid-2048" id="grid"></div>
+
+                <button onclick="newGame()" style="margin-top: 20px; padding: 15px 40px; background: #8f7a66; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">Yangi o'yin</button>
+                <p style="margin-top: 15px; color: #666;">Strelkalar yoki suring</p>
+            </div>
+        </main>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>O'yin tugadi!</h2>
+            <p>Sizning ochkongiz: <strong id="finalScore">0</strong></p>
+            <button onclick="saveAndRestart()" style="margin-top: 20px; padding: 15px 40px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer;">Ball olish va qayta boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        let grid = [];
+        let score = 0;
+        let best = localStorage.getItem('2048_best') || 0;
+
+        function init() {
+            grid = Array(4).fill().map(() => Array(4).fill(0));
+            score = 0;
+            addRandom();
+            addRandom();
+            render();
+        }
+
+        function addRandom() {
+            let empty = [];
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] === 0) empty.push([i, j]);
+                }
+            }
+            if (empty.length) {
+                let [r, c] = empty[Math.floor(Math.random() * empty.length)];
+                grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('grid');
+            container.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile' + (grid[i][j] ? ` tile-${grid[i][j]}` : '');
+                    tile.textContent = grid[i][j] || '';
+                    container.appendChild(tile);
+                }
+            }
+            document.getElementById('score').textContent = score;
+            document.getElementById('best').textContent = best;
+        }
+
+        function slide(row) {
+            let arr = row.filter(x => x);
+            for (let i = 0; i < arr.length - 1; i++) {
+                if (arr[i] === arr[i + 1]) {
+                    arr[i] *= 2;
+                    score += arr[i];
+                    arr.splice(i + 1, 1);
+                }
+            }
+            while (arr.length < 4) arr.push(0);
+            return arr;
+        }
+
+        function move(dir) {
+            let moved = false;
+            let newGrid = grid.map(r => [...r]);
+
+            if (dir === 'left') {
+                for (let i = 0; i < 4; i++) {
+                    let newRow = slide(grid[i]);
+                    if (newRow.join() !== grid[i].join()) moved = true;
+                    newGrid[i] = newRow;
+                }
+            } else if (dir === 'right') {
+                for (let i = 0; i < 4; i++) {
+                    let newRow = slide(grid[i].reverse()).reverse();
+                    if (newRow.join() !== grid[i].join()) moved = true;
+                    newGrid[i] = newRow;
+                }
+            } else if (dir === 'up') {
+                for (let j = 0; j < 4; j++) {
+                    let col = [grid[0][j], grid[1][j], grid[2][j], grid[3][j]];
+                    let newCol = slide(col);
+                    if (newCol.join() !== col.join()) moved = true;
+                    for (let i = 0; i < 4; i++) newGrid[i][j] = newCol[i];
+                }
+            } else if (dir === 'down') {
+                for (let j = 0; j < 4; j++) {
+                    let col = [grid[3][j], grid[2][j], grid[1][j], grid[0][j]];
+                    let newCol = slide(col);
+                    if (newCol.join() !== col.join()) moved = true;
+                    for (let i = 0; i < 4; i++) newGrid[3-i][j] = newCol[i];
+                }
+            }
+
+            if (moved) {
+                grid = newGrid;
+                addRandom();
+                render();
+                if (score > best) {
+                    best = score;
+                    localStorage.setItem('2048_best', best);
+                }
+                if (isGameOver()) {
+                    document.getElementById('finalScore').textContent = score;
+                    document.getElementById('gameOver').style.display = 'flex';
+                }
+            }
+        }
+
+        function isGameOver() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] === 0) return false;
+                    if (j < 3 && grid[i][j] === grid[i][j+1]) return false;
+                    if (i < 3 && grid[i][j] === grid[i+1][j]) return false;
+                }
+            }
+            return true;
+        }
+
+        function newGame() {
+            document.getElementById('gameOver').style.display = 'none';
+            init();
+        }
+
+        function saveAndRestart() {
+            fetch('/game2048_yutuq', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({score: score})
+            }).then(r => r.json()).then(data => {
+                alert(`+${data.ball} ball oldingiz!`);
+                newGame();
+            });
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') move('left');
+            else if (e.key === 'ArrowRight') move('right');
+            else if (e.key === 'ArrowUp') move('up');
+            else if (e.key === 'ArrowDown') move('down');
+        });
+
+        // Touch support
+        let touchStartX, touchStartY;
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+        document.addEventListener('touchend', e => {
+            let dx = e.changedTouches[0].clientX - touchStartX;
+            let dy = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                move(dx > 0 ? 'right' : 'left');
+            } else {
+                move(dy > 0 ? 'down' : 'up');
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

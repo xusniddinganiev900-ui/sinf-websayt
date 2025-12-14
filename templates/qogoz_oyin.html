@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qog'oz O'yini</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        .paper-game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .paper-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .paper-title {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .paper-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .room-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-create:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .btn-join {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-join:hover {
+            background: #667eea;
+            color: white;
+        }
+        .join-form {
+            margin-top: 20px;
+            display: none;
+        }
+        .join-form input {
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            width: 150px;
+            text-transform: uppercase;
+        }
+        .join-form input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .room-code-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 2em;
+            font-weight: bold;
+            letter-spacing: 10px;
+            margin: 20px 0;
+            display: inline-block;
+        }
+        .players-list {
+            margin: 30px 0;
+            text-align: left;
+        }
+        .players-list h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .player-item-game {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .player-item-game.leader {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            border: 2px solid #ffc107;
+        }
+        .player-item-game.current-turn {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #4caf50;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .player-number {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .player-name-game {
+            flex: 1;
+            font-weight: 500;
+        }
+        .player-status {
+            font-size: 12px;
+            color: #666;
+        }
+        .btn-start {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn-start:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .question-container {
+            padding: 30px;
+        }
+        .question-number {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .question-text {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .answer-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .answer-input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-submit-answer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .waiting-message {
+            font-size: 1.2em;
+            color: #666;
+            margin: 30px 0;
+        }
+        .waiting-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .story-container {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+        }
+        .story-text {
+            font-size: 1.4em;
+            line-height: 1.8;
+            color: #333;
+        }
+        .story-text .highlight {
+            background: #fff;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .story-author {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .btn-play-again {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+        .btn-back {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .rules-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .rules-box h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .rules-box ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .rules-box li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .timer-display {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .timer-display.warning {
+            color: #e74c3c;
+            animation: blink 0.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        [data-theme="dark"] .paper-card {
+            background: #2d2d2d;
+        }
+        [data-theme="dark"] .paper-subtitle,
+        [data-theme="dark"] .player-status,
+        [data-theme="dark"] .question-number {
+            color: #aaa;
+        }
+        [data-theme="dark"] .players-list h3,
+        [data-theme="dark"] .question-text,
+        [data-theme="dark"] .player-name-game {
+            color: #fff;
+        }
+        [data-theme="dark"] .player-item-game {
+            background: #3d3d3d;
+        }
+        [data-theme="dark"] .rules-box {
+            background: #3d3d3d;
+        }
+        [data-theme="dark"] .rules-box h4 {
+            color: #fff;
+        }
+        [data-theme="dark"] .rules-box li {
+            color: #ccc;
+        }
+        .btn-ai {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%) !important;
+        }
+        .btn-ai:hover {
+            box-shadow: 0 10px 30px rgba(0, 184, 148, 0.4) !important;
+        }
+        .ai-questions {
+            text-align: left;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        .ai-question-item {
+            margin-bottom: 15px;
+        }
+        .ai-question-item label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .ai-question-item input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+        .ai-question-item input:focus {
+            outline: none;
+            border-color: #00b894;
+        }
+        [data-theme="dark"] .ai-question-item label {
+            color: #fff;
+        }
+        [data-theme="dark"] .ai-question-item input {
+            background: #3d3d3d;
+            border-color: #555;
+            color: #fff;
+        }
+        .multiplayer-options {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        [data-theme="dark"] .multiplayer-options {
+            border-color: #444;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar and foydalanuvchi.avatar != 'oddiy' %}
+                    <img src="{{ url_for('static', filename='images/' + foydalanuvchi.avatar + '.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+                <li class="nav-item active"><a href="{{ url_for('oyin') }}"><span class="icon">🎮</span> Game</a></li>
+                <li class="nav-item"><a href="{{ url_for('reyting') }}"><span class="icon">🏆</span> Reyting</a></li>
+                <li class="nav-item"><a href="{{ url_for('magazin') }}"><span class="icon">🛒</span> Magazin</a></li>
+                <li class="nav-item"><a href="{{ url_for('chat') }}"><span class="icon">💬</span> Chat</a></li>
+                <li class="nav-item"><a href="{{ url_for('sozlamalar') }}"><span class="icon">⚙️</span> Sozlamalar</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="paper-game-container">
+                <button class="btn-back" onclick="window.location.href='/oyin'">← Ortga</button>
+
+                <!-- Bosh ekran -->
+                <div id="main-screen" class="paper-card">
+                    <h1 class="paper-title">Qog'oz O'yini</h1>
+                    <p class="paper-subtitle">Kulgili hikoya yarating!</p>
+
+                    <div class="rules-box">
+                        <h4>📜 O'yin qoidalari:</h4>
+                        <ol>
+                            <li><strong>5 ta savolga</strong> javob beriladi: Kim? Kim bilan? Qachon? Qayerda? Nima qilyapti?</li>
+                            <li>Har bir ishtirokchi <strong>birma-bir</strong> savollarga javob yozadi</li>
+                            <li>Yozilgan javoblarni <strong>boshqa ishtirokchilar ko'rmaydi</strong></li>
+                            <li>Oxirida javoblar birlashib <strong>kulgili hikoya</strong> hosil bo'ladi! 😂</li>
+                        </ol>
+                    </div>
+
+                    <div class="room-actions">
+                        <button class="btn-create btn-ai" onclick="aiOyiniBoshlash()">
+                            🤖 AI bilan o'ynash
+                        </button>
+                        <button class="btn-join" onclick="xonaYaratish()">
+                            👥 Do'stlar bilan o'ynash
+                        </button>
+                    </div>
+
+                    <div class="multiplayer-options" id="multiplayer-options" style="display: none; margin-top: 20px;">
+                        <button class="btn-create" onclick="xonaYaratishReal()">Xona yaratish</button>
+                        <button class="btn-join" onclick="qoshilishFormasi()">Xonaga qo'shilish</button>
+                        <div class="join-form" id="join-form" style="margin-top: 15px;">
+                            <input type="text" id="room-code-input" placeholder="KOD" maxlength="4"
+                                   oninput="this.value = this.value.toUpperCase()">
+                            <button class="btn-create" onclick="xonagaQoshilish()" style="margin-left: 10px;">Kirish</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI o'yini ekrani -->
+                <div id="ai-game-screen" class="paper-card" style="display: none;">
+                    <h2 class="paper-title">🤖 AI bilan o'yin</h2>
+                    <p class="paper-subtitle">Siz istalgan savolga javob bering, qolganlarini AI to'ldiradi!</p>
+
+                    <div class="ai-questions">
+                        <div class="ai-question-item">
+                            <label>1. Kim?</label>
+                            <input type="text" id="ai-q0" placeholder="Masalan: Ali, Robot, Mushuk..." maxlength="30">
+                        </div>
+                        <div class="ai-question-item">
+                            <label>2. Kim bilan?</label>
+                            <input type="text" id="ai-q1" placeholder="Masalan: Mushuk bilan, Robot bilan..." maxlength="30">
+                        </div>
+                        <div class="ai-question-item">
+                            <label>3. Qachon?</label>
+                            <input type="text" id="ai-q2" placeholder="Masalan: Kecha, 100 yil oldin..." maxlength="30">
+                        </div>
+                        <div class="ai-question-item">
+                            <label>4. Qayerda?</label>
+                            <input type="text" id="ai-q3" placeholder="Masalan: Maktabda, Oyda, Parkda..." maxlength="30">
+                        </div>
+                        <div class="ai-question-item">
+                            <label>5. Nima qilyapti?</label>
+                            <input type="text" id="ai-q4" placeholder="Masalan: Yugurmoqda, Uxlayapti..." maxlength="30">
+                        </div>
+                    </div>
+
+                    <p style="color: #666; font-size: 13px; margin: 15px 0;">
+                        💡 Bo'sh qoldirilgan savollarni AI javob beradi
+                    </p>
+
+                    <button class="btn-create" onclick="aiHikoyaYaratish()">Hikoya yaratish</button>
+                    <button class="btn-back" onclick="ortgaAI()" style="margin-left: 10px;">Ortga</button>
+                </div>
+
+                <!-- Kutish xonasi -->
+                <div id="lobby-screen" class="paper-card" style="display: none;">
+                    <h2 class="paper-title">Kutish xonasi</h2>
+                    <p class="paper-subtitle">Do'stlaringizga bu kodni bering:</p>
+
+                    <div class="room-code-display" id="room-code-display">----</div>
+
+                    <div class="players-list">
+                        <h3>O'yinchilar (<span id="player-count">0</span>/10):</h3>
+                        <div id="players-container"></div>
+                    </div>
+
+                    <p id="waiting-text" style="color: #e74c3c;">Kamida 5 ta o'yinchi kerak</p>
+
+                    <button class="btn-start" id="start-btn" disabled onclick="oyinBoshlash()">
+                        O'yinni boshlash
+                    </button>
+                </div>
+
+                <!-- O'yin ekrani -->
+                <div id="game-screen" class="paper-card" style="display: none;">
+                    <div id="my-turn" style="display: none;">
+                        <p class="question-number">Savol <span id="q-number">1</span>/5</p>
+                        <h2 class="question-text" id="question-text">Kim?</h2>
+                        <div class="timer-display" id="answer-timer">30</div>
+                        <input type="text" class="answer-input" id="answer-input" placeholder="Javobingizni yozing..." maxlength="50">
+                        <br>
+                        <button class="btn-submit-answer" onclick="javobYuborish()">Yuborish</button>
+                    </div>
+
+                    <div id="waiting-turn" style="display: none;">
+                        <div class="waiting-spinner"></div>
+                        <p class="waiting-message">
+                            <span id="current-player-name">---</span> javob yozmoqda...
+                        </p>
+                        <p class="question-number">Savol: <span id="waiting-q-number">1</span>/5</p>
+                    </div>
+
+                    <div id="answer-submitted" style="display: none;">
+                        <h2 style="color: #4caf50;">Javobingiz qabul qilindi!</h2>
+                        <div class="waiting-spinner"></div>
+                        <p class="waiting-message">Boshqalar javob yozishini kutmoqda...</p>
+                    </div>
+                </div>
+
+                <!-- Natija ekrani -->
+                <div id="result-screen" class="paper-card" style="display: none;">
+                    <h2 class="paper-title">Hikoya tayyor!</h2>
+
+                    <div class="bonus-notification" id="bonus-notification" style="background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; padding: 15px 25px; border-radius: 15px; margin-bottom: 20px; display: inline-block;">
+                        🎉 +10 ball qo'shildi!
+                    </div>
+
+                    <div class="story-container">
+                        <p class="story-text" id="story-text"></p>
+                    </div>
+
+                    <button class="btn-play-again" onclick="qaytaOynash()">Yana o'ynash</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const socket = io();
+        const ism = "{{ ism }}";
+        const sinf_id = "{{ sinf_id }}";
+        let currentRoom = null;
+        let isLeader = false;
+        let myTurnIndex = -1;
+        let answerTimer = null;
+
+        // AI o'yini funksiyalari
+        function aiOyiniBoshlash() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('ai-game-screen').style.display = 'block';
+        }
+
+        function ortgaAI() {
+            document.getElementById('ai-game-screen').style.display = 'none';
+            document.getElementById('main-screen').style.display = 'block';
+        }
+
+        function aiHikoyaYaratish() {
+            const javoblar = {};
+            for (let i = 0; i < 5; i++) {
+                const val = document.getElementById('ai-q' + i).value.trim();
+                if (val) {
+                    javoblar[i] = val;
+                }
+            }
+
+            fetch('/qogoz_ai_oyin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({javoblar: javoblar})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showAIStory(data.javoblar);
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        function showAIStory(javoblar) {
+            document.getElementById('ai-game-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+
+            const storyText = document.getElementById('story-text');
+            // Yangi tartib: Kim? Kim bilan? Qachon? Qayerda? Nima qilyapti?
+            storyText.innerHTML = `
+                <span class="highlight">${javoblar[0].javob}</span>
+                <span class="story-author">(${javoblar[0].ism})</span>
+                <br><br>
+                <span class="highlight">${javoblar[1].javob}</span>
+                <span class="story-author">(${javoblar[1].ism})</span>
+                <br><br>
+                <span class="highlight">${javoblar[2].javob}</span>
+                <span class="story-author">(${javoblar[2].ism})</span>
+                <br><br>
+                <span class="highlight">${javoblar[3].javob}</span>
+                <span class="story-author">(${javoblar[3].ism})</span>
+                da
+                <br><br>
+                <span class="highlight">${javoblar[4].javob}</span>
+                <span class="story-author">(${javoblar[4].ism})</span>
+            `;
+        }
+
+        // Do'stlar bilan o'ynash
+        function xonaYaratish() {
+            document.getElementById('multiplayer-options').style.display = 'block';
+        }
+
+        function xonaYaratishReal() {
+            socket.emit('qogoz_xona_yaratish', {ism: ism, sinf_id: sinf_id});
+        }
+
+        const savollar = [
+            {savol: "Kim?", misol: "Masalan: Ali, O'qituvchi, Qush..."},
+            {savol: "Kim bilan?", misol: "Masalan: Vali bilan, Mushuk bilan..."},
+            {savol: "Qachon?", misol: "Masalan: Kecha, 100 yil oldin, Tushda..."},
+            {savol: "Qayerda?", misol: "Masalan: Maktabda, Oyda, Hovuzda..."},
+            {savol: "Nima qilyapti?", misol: "Masalan: Uxlayapti, Yugurmoqda..."}
+        ];
+
+        // Qo'shilish formasini ko'rsatish
+        function qoshilishFormasi() {
+            document.getElementById('join-form').style.display = 'block';
+            document.getElementById('room-code-input').focus();
+        }
+
+        // Xonaga qo'shilish
+        function xonagaQoshilish() {
+            const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+            if (code.length !== 4) {
+                alert("4 ta harfli kod kiriting!");
+                return;
+            }
+            socket.emit('qogoz_xonaga_qoshilish', {ism: ism, sinf_id: sinf_id, room_code: code});
+        }
+
+        // Xona yaratildi
+        socket.on('qogoz_xona_yaratildi', function(data) {
+            currentRoom = data.room_code;
+            isLeader = true;
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('lobby-screen').style.display = 'block';
+            document.getElementById('room-code-display').textContent = data.room_code;
+            updatePlayersList(data.players);
+        });
+
+        // Xonaga qo'shildi
+        socket.on('qogoz_qoshildi', function(data) {
+            currentRoom = data.room_code;
+            isLeader = false;
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('lobby-screen').style.display = 'block';
+            document.getElementById('room-code-display').textContent = data.room_code;
+            document.getElementById('start-btn').style.display = 'none';
+            updatePlayersList(data.players);
+        });
+
+        // Xato
+        socket.on('qogoz_xato', function(data) {
+            alert(data.xabar);
+        });
+
+        // O'yinchilar yangilandi
+        socket.on('qogoz_oyinchilar_yangilandi', function(data) {
+            updatePlayersList(data.players);
+        });
+
+        function updatePlayersList(players) {
+            const container = document.getElementById('players-container');
+            container.innerHTML = '';
+            document.getElementById('player-count').textContent = players.length;
+
+            players.forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = 'player-item-game' + (index === 0 ? ' leader' : '');
+                div.innerHTML = `
+                    <div class="player-number">${index + 1}</div>
+                    <span class="player-name-game">${player.ism}</span>
+                    <span class="player-status">${index === 0 ? 'Lider' : ''}</span>
+                `;
+                container.appendChild(div);
+            });
+
+            // Start tugmasini yangilash
+            if (isLeader) {
+                const startBtn = document.getElementById('start-btn');
+                const waitingText = document.getElementById('waiting-text');
+                if (players.length >= 5) {
+                    startBtn.disabled = false;
+                    waitingText.style.display = 'none';
+                } else {
+                    startBtn.disabled = true;
+                    waitingText.textContent = `Yana ${5 - players.length} ta o'yinchi kerak`;
+                    waitingText.style.display = 'block';
+                }
+            }
+        }
+
+        // O'yinni boshlash
+        function oyinBoshlash() {
+            socket.emit('qogoz_oyin_boshlash', {room_code: currentRoom});
+        }
+
+        // O'yin boshlandi
+        socket.on('qogoz_oyin_boshlandi', function(data) {
+            myTurnIndex = data.my_turn;
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+
+            showTurn(data.current_turn, data.question_index, data.current_player);
+        });
+
+        // Navbat ko'rsatish
+        function showTurn(turnIndex, questionIndex, currentPlayerName) {
+            document.getElementById('my-turn').style.display = 'none';
+            document.getElementById('waiting-turn').style.display = 'none';
+            document.getElementById('answer-submitted').style.display = 'none';
+
+            if (turnIndex === myTurnIndex) {
+                // Mening navbatim
+                document.getElementById('my-turn').style.display = 'block';
+                document.getElementById('q-number').textContent = questionIndex + 1;
+                document.getElementById('question-text').textContent = savollar[questionIndex].savol;
+                document.getElementById('answer-input').placeholder = savollar[questionIndex].misol;
+                document.getElementById('answer-input').value = '';
+                document.getElementById('answer-input').focus();
+                startAnswerTimer();
+            } else {
+                // Boshqaning navbati
+                document.getElementById('waiting-turn').style.display = 'block';
+                document.getElementById('current-player-name').textContent = currentPlayerName;
+                document.getElementById('waiting-q-number').textContent = questionIndex + 1;
+            }
+        }
+
+        // Taymer
+        function startAnswerTimer() {
+            let timeLeft = 30;
+            const timerEl = document.getElementById('answer-timer');
+            timerEl.textContent = timeLeft;
+            timerEl.classList.remove('warning');
+
+            if (answerTimer) clearInterval(answerTimer);
+
+            answerTimer = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+
+                if (timeLeft <= 5) {
+                    timerEl.classList.add('warning');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(answerTimer);
+                    // Avtomatik javob yuborish
+                    const input = document.getElementById('answer-input');
+                    if (!input.value.trim()) {
+                        input.value = "...";
+                    }
+                    javobYuborish();
+                }
+            }, 1000);
+        }
+
+        // Javob yuborish
+        function javobYuborish() {
+            if (answerTimer) clearInterval(answerTimer);
+
+            const javob = document.getElementById('answer-input').value.trim() || "...";
+            socket.emit('qogoz_javob', {
+                room_code: currentRoom,
+                javob: javob
+            });
+
+            document.getElementById('my-turn').style.display = 'none';
+            document.getElementById('answer-submitted').style.display = 'block';
+        }
+
+        // Keyingi savol
+        socket.on('qogoz_keyingi_savol', function(data) {
+            showTurn(data.current_turn, data.question_index, data.current_player);
+        });
+
+        // O'yin tugadi - hikoya
+        socket.on('qogoz_hikoya', function(data) {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+
+            const storyText = document.getElementById('story-text');
+            // Yangi tartib: Kim? Kim bilan? Qachon? Qayerda? Nima qilyapti?
+            storyText.innerHTML = `
+                <span class="highlight">${data.javoblar[0].javob}</span>
+                <span class="story-author">(${data.javoblar[0].ism})</span>
+                <br><br>
+                <span class="highlight">${data.javoblar[1].javob}</span>
+                <span class="story-author">(${data.javoblar[1].ism})</span>
+                <br><br>
+                <span class="highlight">${data.javoblar[2].javob}</span>
+                <span class="story-author">(${data.javoblar[2].ism})</span>
+                <br><br>
+                <span class="highlight">${data.javoblar[3].javob}</span>
+                <span class="story-author">(${data.javoblar[3].ism})</span>
+                da
+                <br><br>
+                <span class="highlight">${data.javoblar[4].javob}</span>
+                <span class="story-author">(${data.javoblar[4].ism})</span>
+            `;
+        });
+
+        // Qayta o'ynash
+        function qaytaOynash() {
+            window.location.href = '/qogoz_oyin';
+        }
+
+        // O'yinchi chiqib ketdi
+        socket.on('qogoz_oyinchi_chiqdi', function(data) {
+            if (data.oyin_bekor) {
+                alert("O'yinchi chiqib ketdi. O'yin bekor qilindi.");
+                window.location.href = '/qogoz_oyin';
+            } else {
+                updatePlayersList(data.players);
+            }
+        });
+
+        // Enter tugmasi bilan yuborish
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const roomInput = document.getElementById('room-code-input');
+                const answerInput = document.getElementById('answer-input');
+
+                if (document.activeElement === roomInput) {
+                    xonagaQoshilish();
+                } else if (document.activeElement === answerInput) {
+                    javobYuborish();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

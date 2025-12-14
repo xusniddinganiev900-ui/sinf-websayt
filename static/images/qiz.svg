@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#F48FB1"/>
+
+  <!-- Hair back -->
+  <ellipse cx="50" cy="55" rx="32" ry="35" fill="#5D4037"/>
+
+  <!-- Face -->
+  <circle cx="50" cy="45" r="25" fill="#FFCC80"/>
+
+  <!-- Hair front -->
+  <path d="M25 45 Q25 18 50 18 Q75 18 75 45 Q72 35 50 32 Q28 35 25 45" fill="#5D4037"/>
+
+  <!-- Hair sides -->
+  <ellipse cx="23" cy="55" rx="8" ry="20" fill="#5D4037"/>
+  <ellipse cx="77" cy="55" rx="8" ry="20" fill="#5D4037"/>
+
+  <!-- Eyes -->
+  <ellipse cx="40" cy="42" rx="4" ry="5" fill="#333"/>
+  <ellipse cx="60" cy="42" rx="4" ry="5" fill="#333"/>
+  <circle cx="41" cy="41" r="1.5" fill="#FFF"/>
+  <circle cx="61" cy="41" r="1.5" fill="#FFF"/>
+
+  <!-- Eyelashes -->
+  <path d="M35 38 L37 40" stroke="#333" stroke-width="1"/>
+  <path d="M36 36 L38 39" stroke="#333" stroke-width="1"/>
+  <path d="M63 40 L65 38" stroke="#333" stroke-width="1"/>
+  <path d="M62 39 L64 36" stroke="#333" stroke-width="1"/>
+
+  <!-- Eyebrows -->
+  <path d="M35 36 Q40 33 45 35" stroke="#5D4037" stroke-width="1.5" fill="none"/>
+  <path d="M55 35 Q60 33 65 36" stroke="#5D4037" stroke-width="1.5" fill="none"/>
+
+  <!-- Blush -->
+  <ellipse cx="32" cy="50" rx="5" ry="3" fill="#FFAB91" opacity="0.6"/>
+  <ellipse cx="68" cy="50" rx="5" ry="3" fill="#FFAB91" opacity="0.6"/>
+
+  <!-- Nose -->
+  <path d="M50 45 L48 51 L52 51" stroke="#E6A860" stroke-width="1.5" fill="none"/>
+
+  <!-- Smile -->
+  <path d="M43 56 Q50 62 57 56" stroke="#E91E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Body/Dress -->
+  <path d="M30 75 Q30 70 50 70 Q70 70 70 75 L75 98 L25 98 Z" fill="#E91E63"/>
+
+  <!-- Collar decoration -->
+  <circle cx="50" cy="73" r="3" fill="#FFC107"/>
+</svg>

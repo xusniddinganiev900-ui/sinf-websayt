@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maqsadlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .goals-container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .add-goal-box {
+            background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        .input-group { display: flex; gap: 10px; margin-top: 15px; }
+        .input-group input {
+            flex: 1; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em;
+        }
+        .input-group input:focus { border-color: #667eea; outline: none; }
+        .btn-add {
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer;
+        }
+        .goal-card {
+            background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1); position: relative;
+        }
+        .goal-card.completed { border: 2px solid #27ae60; background: #f0fff4; }
+        .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .goal-name { font-size: 1.2em; font-weight: bold; }
+        .goal-target { color: #666; font-size: 0.9em; }
+        .btn-delete {
+            background: #e74c3c; color: white; border: none; width: 30px; height: 30px;
+            border-radius: 50%; cursor: pointer; font-size: 1em;
+        }
+        .progress-container { margin-top: 15px; }
+        .progress-bar { height: 25px; background: #e0e0e0; border-radius: 12px; overflow: hidden; }
+        .progress-fill {
+            height: 100%; background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 0.9em; transition: width 0.5s;
+        }
+        .progress-fill.completed { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .goal-stats { display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.9em; color: #666; }
+        .empty-state { text-align: center; padding: 50px; color: #666; }
+        .completed-badge { color: #27ae60; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        [data-theme="dark"] .add-goal-box { background: #2d2d2d; }
+        [data-theme="dark"] .goal-card { background: #2d2d2d; }
+        [data-theme="dark"] .goal-card.completed { background: #1a3d1a; }
+        [data-theme="dark"] .input-group input { background: #3d3d3d; border-color: #555; color: white; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/' + (foydalanuvchi.avatar if foydalanuvchi.avatar else 'ogil.svg')) }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display" id="currentBall">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('statistika') }}"><span class="icon">📊</span> Statistika</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="goals-container">
+                <h1>🎯 Mening Maqsadlarim</h1>
+
+                <div class="add-goal-box">
+                    <h3>Yangi maqsad qo'shish</h3>
+                    <div class="input-group">
+                        <input type="text" id="goalName" placeholder="Maqsad nomi (masalan: 500 ball)">
+                        <input type="number" id="goalBall" placeholder="Ball" style="max-width: 100px;" min="10">
+                        <button class="btn-add" onclick="addGoal()">➕ Qo'shish</button>
+                    </div>
+                </div>
+
+                <div id="goalsList">
+                    {% if maqsadlar %}
+                        {% for maqsad in maqsadlar %}
+                        {% set progress = foydalanuvchi.ball - maqsad.boshlangich %}
+                        {% set percent = ((progress / maqsad.maqsad) * 100)|int %}
+                        {% set completed = percent >= 100 %}
+                        <div class="goal-card {% if completed %}completed{% endif %}">
+                            <div class="goal-header">
+                                <div>
+                                    <div class="goal-name">{{ maqsad.nomi }}</div>
+                                    <div class="goal-target">Maqsad: +{{ maqsad.maqsad }} ball</div>
+                                </div>
+                                {% if completed %}
+                                <div class="completed-badge">✅ Bajarildi!</div>
+                                {% else %}
+                                <button class="btn-delete" onclick="deleteGoal({{ maqsad.id }})">×</button>
+                                {% endif %}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill {% if completed %}completed{% endif %}" style="width: {{ [percent, 100]|min }}%">
+                                        {{ [percent, 100]|min }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="goal-stats">
+                                <span>{{ progress }} / {{ maqsad.maqsad }} ball</span>
+                                <span>{{ maqsad.yaratilgan }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state" id="emptyState">
+                            <div style="font-size: 4em; margin-bottom: 20px;">🎯</div>
+                            <p>Hali maqsad qo'shilmagan</p>
+                            <p>Yuqoridagi formadan yangi maqsad qo'shing!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function addGoal() {
+            const name = document.getElementById('goalName').value.trim();
+            const ball = parseInt(document.getElementById('goalBall').value);
+
+            if (!name || !ball || ball < 10) {
+                alert('Maqsad nomi va ball (kamida 10) kiriting!');
+                return;
+            }
+
+            fetch('/maqsad_qoshish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({nomi: name, ball: ball})
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.xato || 'Xatolik yuz berdi');
+                }
+            });
+        }
+
+        function deleteGoal(id) {
+            if (!confirm("Maqsadni o'chirmoqchimisiz?")) return;
+
+            fetch('/maqsad_ochirish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

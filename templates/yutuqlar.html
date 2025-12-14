@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yutuqlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .achievements-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .achievement-card {
+            background: white; border-radius: 15px; padding: 20px; text-align: center;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1); transition: all 0.3s;
+        }
+        .achievement-card.locked { opacity: 0.5; filter: grayscale(1); }
+        .achievement-card.unlocked { border: 2px solid #27ae60; }
+        .achievement-icon { font-size: 3em; margin-bottom: 10px; }
+        .achievement-name { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+        .achievement-desc { font-size: 13px; color: #666; margin-bottom: 10px; }
+        .achievement-reward { background: linear-gradient(135deg, #f5af19, #f12711); color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; display: inline-block; }
+        .progress-bar { margin-top: 20px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .progress-text { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .progress-fill { height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+        .progress-fill-inner { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); transition: width 0.5s; }
+        [data-theme="dark"] .achievement-card { background: #2d2d2d; }
+        [data-theme="dark"] .progress-bar { background: #2d2d2d; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+                <li class="nav-item active"><a href="{{ url_for('yutuqlar_sahifa') }}"><span class="icon">🏅</span> Yutuqlar</a></li>
+                <li class="nav-item"><a href="{{ url_for('statistika') }}"><span class="icon">📊</span> Statistika</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="achievements-container">
+                <h1>🏅 Yutuqlar</h1>
+                <div class="progress-bar">
+                    <div class="progress-text">
+                        <span>Yutuqlar: {{ user_yutuqlar|length }}/{{ barcha_yutuqlar|length }}</span>
+                        <span>{{ ((user_yutuqlar|length / barcha_yutuqlar|length) * 100)|int }}%</span>
+                    </div>
+                    <div class="progress-fill">
+                        <div class="progress-fill-inner" style="width: {{ (user_yutuqlar|length / barcha_yutuqlar|length) * 100 }}%"></div>
+                    </div>
+                </div>
+
+                <h2 style="margin: 30px 0 20px;">Barcha yutuqlar</h2>
+                <div class="achievements-grid">
+                    {% for key, yutuq in barcha_yutuqlar.items() %}
+                    <div class="achievement-card {% if key in user_yutuqlar %}unlocked{% else %}locked{% endif %}">
+                        <div class="achievement-icon">{{ yutuq.icon }}</div>
+                        <div class="achievement-name">{{ yutuq.nomi }}</div>
+                        <div class="achievement-desc">{{ yutuq.tavsif }}</div>
+                        <div class="achievement-reward">+{{ yutuq.ball }} ball</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

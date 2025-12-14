@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if admin_tur == 'yopiq' %}MAXFIY PANEL{% else %}Admin Panel{% endif %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        body {
+            background: {% if admin_tur == 'yopiq' %}linear-gradient(135deg, #1a1a2e 0%, #16213e 100%){% else %}linear-gradient(135deg, #e74c3c 0%, #c0392b 100%){% endif %};
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .admin-header {
+            background: {% if admin_tur == 'yopiq' %}rgba(0,0,0,0.5){% else %}rgba(255,255,255,0.1){% endif %};
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        .admin-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 1.8em;
+        }
+        .admin-badge {
+            background: {% if admin_tur == 'yopiq' %}#e74c3c{% else %}#f39c12{% endif %};
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stat-box .icon { font-size: 2em; margin-bottom: 10px; }
+        .stat-box .number { font-size: 2em; font-weight: bold; color: #333; }
+        .stat-box .label { color: #666; font-size: 14px; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        .sidebar-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .sidebar-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .sinf-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sinf-item {
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sinf-item:hover { background: #f5f5f5; }
+        .sinf-item.active { background: {% if admin_tur == 'yopiq' %}#1a1a2e{% else %}#e74c3c{% endif %}; color: white; }
+
+        .main-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        .search-box {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            width: 250px;
+        }
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .users-table th, .users-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .users-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        .users-table tr:hover { background: #f8f9fa; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.online { background: #4caf50; }
+        .status-dot.offline { background: #ccc; }
+        .status-dot.blocked { background: #e74c3c; }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 4px;
+            transition: all 0.3s;
+        }
+        .btn-coin { background: #f39c12; color: white; }
+        .btn-bosqich { background: #3498db; color: white; }
+        .btn-parol { background: #9b59b6; color: white; }
+        .btn-block { background: #e74c3c; color: white; }
+        .btn-unblock { background: #27ae60; color: white; }
+        .btn-delete { background: #c0392b; color: white; }
+        .btn-temp { background: #e67e22; color: white; }
+        .btn-down { background: #8e44ad; color: white; }
+        .btn-qarz { background: #c0392b; color: white; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { margin: 0; }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .modal-btn.primary {
+            background: {% if admin_tur == 'yopiq' %}#1a1a2e{% else %}#e74c3c{% endif %};
+            color: white;
+        }
+
+        /* Yopiq admin maxsus */
+        {% if admin_tur == 'yopiq' %}
+        .secret-section {
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        .secret-section h3 {
+            color: #e74c3c;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 10px;
+        }
+        .admin-list {
+            list-style: none;
+            padding: 0;
+        }
+        .admin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .chat-view {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .chat-message {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background: white;
+        }
+        .chat-message .sender { font-weight: bold; color: #e74c3c; }
+        .chat-message .time { font-size: 11px; color: #999; }
+        {% endif %}
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #eee;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: {% if admin_tur == 'yopiq' %}#1a1a2e{% else %}#e74c3c{% endif %};
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1>{% if admin_tur == 'yopiq' %}MAXFIY BOSHQARUV{% else %}Admin Panel{% endif %}</h1>
+                <span class="admin-badge">{{ admin_ism }}</span>
+            </div>
+            <a href="{{ url_for('chiqish') }}" class="logout-btn">Chiqish</a>
+        </div>
+
+        <!-- Statistika -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="icon">👥</div>
+                <div class="number">{{ total_users }}</div>
+                <div class="label">Jami foydalanuvchilar</div>
+            </div>
+            <div class="stat-box">
+                <div class="icon">🟢</div>
+                <div class="number">{{ online_users }}</div>
+                <div class="label">Online</div>
+            </div>
+            <div class="stat-box">
+                <div class="icon">💰</div>
+                <div class="number">{{ total_balls }}</div>
+                <div class="label">Jami ball</div>
+            </div>
+            <div class="stat-box">
+                <div class="icon">🚫</div>
+                <div class="number">{{ blocked_count }}</div>
+                <div class="label">Bloklangan</div>
+            </div>
+        </div>
+
+        <!-- Asosiy grid -->
+        <div class="main-grid">
+            <!-- Chap sidebar -->
+            <div class="sidebar-panel">
+                <h3>Sinflar</h3>
+                <ul class="sinf-list">
+                    {% for sid, sinf in sinflar.items() %}
+                    <li class="sinf-item" data-sinf="{{ sid }}" onclick="selectSinf('{{ sid }}')">
+                        <span>{{ sinf.icon }} {{ sinf.nomi }}</span>
+                        <span>{{ sinf.oquvchilar_soni }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                {% if admin_tur == 'yopiq' %}
+                <div class="secret-section">
+                    <h3>Adminlarni boshqarish</h3>
+                    <ul class="admin-list">
+                        <li class="admin-item">
+                            <span>ADMIN (Ochiq)</span>
+                            {% if 'ADMIN' in blocked.admin_blocked %}
+                            <button class="action-btn btn-unblock" onclick="unblockAdmin('ADMIN')">Blokdan chiqarish</button>
+                            {% else %}
+                            <button class="action-btn btn-block" onclick="blockAdmin('ADMIN')">Bloklash</button>
+                            {% endif %}
+                        </li>
+                    </ul>
+
+                    <h3 style="margin-top: 20px;">Xabarlarni o'qish</h3>
+                    <select id="chatSinfSelect" onchange="loadMessages(this.value)">
+                        <option value="">Sinf tanlang</option>
+                        {% for sid, sinf in sinflar.items() %}
+                        <option value="{{ sid }}">{{ sinf.nomi }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="chat-view" id="chatView">
+                        <p style="color: #999; text-align: center;">Sinf tanlang</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Asosiy panel -->
+            <div class="main-panel">
+                <div class="panel-header">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="showTab('users')">Foydalanuvchilar</button>
+                        <button class="tab-btn" onclick="showTab('blocked')">Bloklangan</button>
+                    </div>
+                    <input type="text" class="search-box" placeholder="Qidirish..." onkeyup="searchUsers(this.value)">
+                </div>
+
+                <!-- Foydalanuvchilar tab -->
+                <div class="tab-content active" id="usersTab">
+                    <table class="users-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Foydalanuvchi</th>
+                                <th>Sinf</th>
+                                <th>Ball</th>
+                                <th>Bosqich</th>
+                                <th>Status</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, user in users.items() %}
+                            <tr data-key="{{ key }}" data-sinf="{{ user.sinf_id }}" data-name="{{ user.ism }}">
+                                <td>
+                                    <div class="user-info">
+                                        {% if user.avatar and user.avatar != 'oddiy' %}
+                                        <img class="user-avatar" src="{{ url_for('static', filename='images/' + user.avatar + '.svg') }}" alt="">
+                                        {% elif user.jins == 'qiz' %}
+                                        <img class="user-avatar" src="{{ url_for('static', filename='images/qiz.svg') }}" alt="">
+                                        {% else %}
+                                        <img class="user-avatar" src="{{ url_for('static', filename='images/ogil.svg') }}" alt="">
+                                        {% endif %}
+                                        <span>{{ user.ism }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ user.sinf_id }}</td>
+                                <td><strong>{{ user.ball }}</strong></td>
+                                <td>M{{ user.mavsum }}-B{{ user.bosqich }}</td>
+                                <td>
+                                    {% if key in blocked.blocked or key in blocked.temp_blocked %}
+                                    <span class="status-dot blocked"></span> Bloklangan
+                                    {% elif user.online %}
+                                    <span class="status-dot online"></span> Online
+                                    {% else %}
+                                    <span class="status-dot offline"></span> Offline
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="action-btn btn-coin" onclick="editCoin('{{ user.sinf_id }}', '{{ user.ism }}', {{ user.ball }})">Coin</button>
+                                    <button class="action-btn btn-bosqich" onclick="editBosqich('{{ user.sinf_id }}', '{{ user.ism }}')">Bosqich</button>
+                                    <button class="action-btn btn-parol" onclick="resetParol('{{ user.sinf_id }}', '{{ user.ism }}')">Parol</button>
+                                    {% if admin_tur == 'yopiq' %}
+                                    {% if key in blocked.blocked or key in blocked.temp_blocked %}
+                                    <button class="action-btn btn-unblock" onclick="unblockUser('{{ user.sinf_id }}', '{{ user.ism }}')">Blokdan</button>
+                                    {% else %}
+                                    <button class="action-btn btn-block" onclick="blockUser('{{ user.sinf_id }}', '{{ user.ism }}')">Bloklash</button>
+                                    <button class="action-btn btn-temp" onclick="tempBlockUser('{{ user.sinf_id }}', '{{ user.ism }}')">Vaqtincha</button>
+                                    {% endif %}
+                                    <button class="action-btn btn-qarz" onclick="qarzModal('{{ user.sinf_id }}', '{{ user.ism }}', {{ user.ball }})">Qarz</button>
+                                    {% endif %}
+                                    <button class="action-btn btn-delete" onclick="deleteUser('{{ user.sinf_id }}', '{{ user.ism }}')">O'chirish</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bloklangan tab -->
+                <div class="tab-content" id="blockedTab">
+                    <h3>Bloklangan foydalanuvchilar</h3>
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Foydalanuvchi</th>
+                                <th>Turi</th>
+                                <th>Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key in blocked.blocked %}
+                            {% set parts = key.split(':') %}
+                            <tr>
+                                <td>{{ parts[1] }} ({{ parts[0] }})</td>
+                                <td>Doimiy</td>
+                                <td>
+                                    {% if admin_tur == 'yopiq' %}
+                                    <button class="action-btn btn-unblock" onclick="unblockUser('{{ parts[0] }}', '{{ parts[1] }}')">Blokdan chiqarish</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% for key, end_time in blocked.temp_blocked.items() %}
+                            {% set parts = key.split(':') %}
+                            <tr>
+                                <td>{{ parts[1] }} ({{ parts[0] }})</td>
+                                <td>Vaqtinchalik ({{ end_time[:16] }})</td>
+                                <td>
+                                    {% if admin_tur == 'yopiq' %}
+                                    <button class="action-btn btn-unblock" onclick="unblockUser('{{ parts[0] }}', '{{ parts[1] }}')">Blokdan chiqarish</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coin Modal -->
+    <div class="modal" id="coinModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Coin o'zgartirish</h3>
+                <button class="close-modal" onclick="closeModal('coinModal')">&times;</button>
+            </div>
+            <input type="hidden" id="coinSinf">
+            <input type="hidden" id="coinUser">
+            <div class="form-group">
+                <label>Foydalanuvchi: <span id="coinUserDisplay"></span></label>
+            </div>
+            <div class="form-group">
+                <label>Joriy ball: <span id="coinCurrent"></span></label>
+            </div>
+            <div class="form-group">
+                <label>Miqdor:</label>
+                <input type="number" id="coinAmount" value="100">
+            </div>
+            <button class="modal-btn primary" onclick="addCoin()">+ Qo'shish</button>
+            <button class="modal-btn" style="background: #e74c3c; color: white;" onclick="removeCoin()">- Ayirish</button>
+        </div>
+    </div>
+
+    <!-- Bosqich Modal -->
+    <div class="modal" id="bosqichModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bosqich o'zgartirish</h3>
+                <button class="close-modal" onclick="closeModal('bosqichModal')">&times;</button>
+            </div>
+            <input type="hidden" id="bosqichSinf">
+            <input type="hidden" id="bosqichUser">
+            <div class="form-group">
+                <label>Foydalanuvchi: <span id="bosqichUserDisplay"></span></label>
+            </div>
+            <button class="modal-btn primary" onclick="bosqichKotarish()">Bosqichni ko'tarish</button>
+            {% if admin_tur == 'yopiq' %}
+            <button class="modal-btn" style="background: #8e44ad; color: white;" onclick="bosqichTushirish()">Bosqichni tushirish</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Parol Modal -->
+    <div class="modal" id="parolModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Parol tiklash</h3>
+                <button class="close-modal" onclick="closeModal('parolModal')">&times;</button>
+            </div>
+            <input type="hidden" id="parolSinf">
+            <input type="hidden" id="parolUser">
+            <div class="form-group">
+                <label>Foydalanuvchi: <span id="parolUserDisplay"></span></label>
+            </div>
+            <div class="form-group">
+                <label>Yangi parol:</label>
+                <input type="text" id="newParol">
+            </div>
+            <button class="modal-btn primary" onclick="saveParol()">Saqlash</button>
+        </div>
+    </div>
+
+    {% if admin_tur == 'yopiq' %}
+    <!-- Vaqtinchalik blok Modal -->
+    <div class="modal" id="tempBlockModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Vaqtinchalik bloklash</h3>
+                <button class="close-modal" onclick="closeModal('tempBlockModal')">&times;</button>
+            </div>
+            <input type="hidden" id="tempBlockSinf">
+            <input type="hidden" id="tempBlockUser">
+            <div class="form-group">
+                <label>Foydalanuvchi: <span id="tempBlockUserDisplay"></span></label>
+            </div>
+            <div class="form-group">
+                <label>Muddat (soat):</label>
+                <select id="tempBlockHours">
+                    <option value="1">1 soat</option>
+                    <option value="6">6 soat</option>
+                    <option value="12">12 soat</option>
+                    <option value="24" selected>1 kun</option>
+                    <option value="72">3 kun</option>
+                    <option value="168">1 hafta</option>
+                </select>
+            </div>
+            <button class="modal-btn primary" onclick="saveTempBlock()">Bloklash</button>
+        </div>
+    </div>
+
+    <!-- Admin bloklash Modal -->
+    <div class="modal" id="adminBlockModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Admin bloklash</h3>
+                <button class="close-modal" onclick="closeModal('adminBlockModal')">&times;</button>
+            </div>
+            <input type="hidden" id="adminBlockName">
+            <div class="form-group">
+                <label>Tasdiqlash uchun parolingizni kiriting:</label>
+                <input type="password" id="adminBlockPassword" placeholder="Maxfiy parol">
+            </div>
+            <button class="modal-btn primary" onclick="confirmAdminBlock()">Bloklash</button>
+        </div>
+    </div>
+
+    <!-- Qarz Modal -->
+    <div class="modal" id="qarzModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Qarzga tiqish</h3>
+                <button class="close-modal" onclick="closeModal('qarzModal')">&times;</button>
+            </div>
+            <input type="hidden" id="qarzSinf">
+            <input type="hidden" id="qarzUser">
+            <div class="form-group">
+                <label>Foydalanuvchi: <span id="qarzUserDisplay"></span></label>
+            </div>
+            <div class="form-group">
+                <label>Joriy ball: <span id="qarzCurrentBall"></span></label>
+            </div>
+            <div class="form-group">
+                <label>Qarz miqdori:</label>
+                <input type="number" id="qarzAmount" value="100" min="1">
+            </div>
+            <p style="color: #e74c3c; font-size: 12px; margin-bottom: 10px;">
+                Foydalanuvchi balli manfiy qiymatga tushadi!
+            </p>
+            <button class="modal-btn primary" onclick="saveQarz()">Qarzga tiqish</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        function selectSinf(sinfId) {
+            document.querySelectorAll('.sinf-item').forEach(i => i.classList.remove('active'));
+            event.target.closest('.sinf-item').classList.add('active');
+
+            // Filtrlash
+            document.querySelectorAll('#usersTable tbody tr').forEach(row => {
+                row.style.display = row.dataset.sinf === sinfId ? '' : 'none';
+            });
+        }
+
+        function searchUsers(query) {
+            query = query.toLowerCase();
+            document.querySelectorAll('#usersTable tbody tr').forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                row.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Coin
+        function editCoin(sinf, user, current) {
+            document.getElementById('coinSinf').value = sinf;
+            document.getElementById('coinUser').value = user;
+            document.getElementById('coinUserDisplay').textContent = user;
+            document.getElementById('coinCurrent').textContent = current;
+            document.getElementById('coinModal').classList.add('active');
+        }
+
+        function addCoin() {
+            const sinf = document.getElementById('coinSinf').value;
+            const user = document.getElementById('coinUser').value;
+            const amount = parseInt(document.getElementById('coinAmount').value);
+
+            fetch('/admin/ball', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user, ball: amount, action: 'add'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Ball qo\'shildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        function removeCoin() {
+            const sinf = document.getElementById('coinSinf').value;
+            const user = document.getElementById('coinUser').value;
+            const amount = parseInt(document.getElementById('coinAmount').value);
+
+            fetch('/admin/ball', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user, ball: amount, action: 'remove'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Ball ayirildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        // Bosqich
+        function editBosqich(sinf, user) {
+            document.getElementById('bosqichSinf').value = sinf;
+            document.getElementById('bosqichUser').value = user;
+            document.getElementById('bosqichUserDisplay').textContent = user;
+            document.getElementById('bosqichModal').classList.add('active');
+        }
+
+        function bosqichKotarish() {
+            const sinf = document.getElementById('bosqichSinf').value;
+            const user = document.getElementById('bosqichUser').value;
+
+            fetch('/admin/bosqich', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user, action: 'kotarish'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Bosqich ko\'tarildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        function bosqichTushirish() {
+            const sinf = document.getElementById('bosqichSinf').value;
+            const user = document.getElementById('bosqichUser').value;
+
+            fetch('/admin/bosqich', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user, action: 'tushirish'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Bosqich tushirildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        // Parol
+        function resetParol(sinf, user) {
+            document.getElementById('parolSinf').value = sinf;
+            document.getElementById('parolUser').value = user;
+            document.getElementById('parolUserDisplay').textContent = user;
+            document.getElementById('newParol').value = '';
+            document.getElementById('parolModal').classList.add('active');
+        }
+
+        function saveParol() {
+            const sinf = document.getElementById('parolSinf').value;
+            const user = document.getElementById('parolUser').value;
+            const parol = document.getElementById('newParol').value;
+
+            fetch('/admin/password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user, password: parol})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Parol o\'zgartirildi!');
+                    closeModal('parolModal');
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        // O'chirish
+        function deleteUser(sinf, user) {
+            if (confirm(`"${user}" ni o'chirishni xohlaysizmi?`)) {
+                fetch('/admin/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({sinf_id: sinf, username: user})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('O\'chirildi!');
+                        location.reload();
+                    } else {
+                        alert(data.xato);
+                    }
+                });
+            }
+        }
+
+        {% if admin_tur == 'yopiq' %}
+        // Bloklash
+        function blockUser(sinf, user) {
+            if (confirm(`"${user}" ni bloklashni xohlaysizmi?`)) {
+                fetch('/admin/block', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({sinf_id: sinf, username: user})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Bloklandi!');
+                        location.reload();
+                    } else {
+                        alert(data.xato);
+                    }
+                });
+            }
+        }
+
+        function unblockUser(sinf, user) {
+            fetch('/admin/unblock', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Blokdan chiqarildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        function tempBlockUser(sinf, user) {
+            document.getElementById('tempBlockSinf').value = sinf;
+            document.getElementById('tempBlockUser').value = user;
+            document.getElementById('tempBlockUserDisplay').textContent = user;
+            document.getElementById('tempBlockModal').classList.add('active');
+        }
+
+        function saveTempBlock() {
+            const sinf = document.getElementById('tempBlockSinf').value;
+            const user = document.getElementById('tempBlockUser').value;
+            const hours = parseInt(document.getElementById('tempBlockHours').value);
+
+            fetch('/admin/temp_block', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinf, username: user, hours: hours})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Vaqtinchalik bloklandi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        // Admin bloklash
+        function blockAdmin(name) {
+            document.getElementById('adminBlockName').value = name;
+            document.getElementById('adminBlockPassword').value = '';
+            document.getElementById('adminBlockModal').classList.add('active');
+        }
+
+        function confirmAdminBlock() {
+            const name = document.getElementById('adminBlockName').value;
+            const password = document.getElementById('adminBlockPassword').value;
+
+            fetch('/admin/block_admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({admin_name: name, password: password})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Admin bloklandi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        function unblockAdmin(name) {
+            fetch('/admin/unblock_admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({admin_name: name})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Admin blokdan chiqarildi!');
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+
+        // Xabarlarni o'qish
+        function loadMessages(sinfId) {
+            if (!sinfId) return;
+
+            fetch('/admin/read_messages', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sinf_id: sinfId})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const view = document.getElementById('chatView');
+                    if (data.xabarlar.length === 0) {
+                        view.innerHTML = '<p style="color: #999; text-align: center;">Xabar yo\'q</p>';
+                    } else {
+                        view.innerHTML = data.xabarlar.map(x => `
+                            <div class="chat-message">
+                                <span class="sender">${x.username}</span>
+                                <span class="time">${x.time || ''}</span>
+                                <p>${x.message}</p>
+                            </div>
+                        `).join('');
+                    }
+                }
+            });
+        }
+
+        // Qarzga tiqish
+        function qarzModal(sinf, user, currentBall) {
+            document.getElementById('qarzSinf').value = sinf;
+            document.getElementById('qarzUser').value = user;
+            document.getElementById('qarzUserDisplay').textContent = user;
+            document.getElementById('qarzCurrentBall').textContent = currentBall;
+            document.getElementById('qarzAmount').value = 100;
+            document.getElementById('qarzModal').classList.add('active');
+        }
+
+        function saveQarz() {
+            const sinf = document.getElementById('qarzSinf').value;
+            const user = document.getElementById('qarzUser').value;
+            const qarz = parseInt(document.getElementById('qarzAmount').value);
+
+            if (confirm(`"${user}" ni ${qarz} ballga qarzga tiqmoqchimisiz?`)) {
+                fetch('/admin/qarz', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({sinf_id: sinf, username: user, qarz: qarz})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Foydalanuvchi qarzga tiqildi! Yangi ball: ${data.yangi_ball}`);
+                        location.reload();
+                    } else {
+                        alert(data.xato);
+                    }
+                });
+            }
+        }
+        {% endif %}
+    </script>
+</body>
+</html>

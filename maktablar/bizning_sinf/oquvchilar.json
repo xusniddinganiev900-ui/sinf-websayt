@@ -1,0 +1,155 @@
+{
+  "Muhammadakbar": {
+    "parol": "5606",
+    "eslatma": "hayir osha yillar",
+    "jins": "ogil",
+    "malumot": "Men Rasulov Muhammadakbar 2014-yil 11-dekabrda tug`ilganman biz oilada 7 kishimiz buvim,dadam,oyim,men,katta ukam,singlim,kichkina ukam.buvimning ismi Xanifaxon buvim  1951-yil 10-mayda tug`ilgan.Dadamning ismi G`aniyev Xusnidin dadam 1988-yil 25-noyabirda tug`ilgan.Oyim G`aniyeva Madina oyim 1992-yil 3-noyabrda tug`ilgan.",
+    "online": true,
+    "ball": 72,
+    "bosqich": 18,
+    "mavsum": 2,
+    "avatar": "robot",
+    "gadjetlar": [
+      "kozoynok",
+      "shlyapa",
+      "medal",
+      "telefon",
+      "kamera",
+      "planshet",
+      "quloqchin",
+      "soat",
+      "sumka"
+    ],
+    "bonuslar": {
+      "ai_yordam": 3,
+      "yordamchi": 4,
+      "vaqt_1": 5,
+      "otkazish": 15314,
+      "vaqt_5": 15002,
+      "5050": 15143
+    },
+    "oxirgi_bonus": "2025-12-14",
+    "bonus_streak": 1,
+    "dostlar": [],
+    "bildirishnomalar": [],
+    "kitoblar": [
+      {
+        "id": 1,
+        "nomi": "shytonvacha nayranglari",
+        "muallif": "",
+        "holat": "oqilmoqda",
+        "qoshilgan": "2025-12-08"
+      }
+    ],
+    "ball_tarix": {
+      "2025-12-09": 11
+    }
+  },
+  "Test1": {
+    "parol": "test111",
+    "eslatma": "",
+    "jins": "ogil",
+    "malumot": "Test account",
+    "ball": 999999,
+    "bosqich": 20,
+    "mavsum": 99,
+    "avatar": "astronavt",
+    "gadjetlar": [
+      "kozoynok"
+    ],
+    "bonuslar": {},
+    "online": true,
+    "test_account": true,
+    "oxirgi_bonus": "2025-12-08",
+    "bonus_streak": 1,
+    "zar_oyin": {
+      "sana": "2025-12-08",
+      "urinishlar": 5
+    },
+    "yutuqlar": [
+      "ball_100",
+      "ball_500",
+      "ball_1000",
+      "mavsum_5",
+      "mavsum_10"
+    ],
+    "mavzu": "qoramtir"
+  },
+  "Test2": {
+    "parol": "test222",
+    "eslatma": "",
+    "jins": "ogil",
+    "malumot": "Test account",
+    "ball": 999999,
+    "bosqich": 20,
+    "mavsum": 99,
+    "avatar": "oddiy",
+    "gadjetlar": [],
+    "bonuslar": {},
+    "online": true,
+    "test_account": true
+  },
+  "Test3": {
+    "parol": "test333",
+    "eslatma": "",
+    "jins": "ogil",
+    "malumot": "Test account",
+    "ball": 999999,
+    "bosqich": 20,
+    "mavsum": 99,
+    "avatar": "oddiy",
+    "gadjetlar": [],
+    "bonuslar": {},
+    "online": true,
+    "test_account": true
+  },
+  "Test4": {
+    "parol": "test444",
+    "eslatma": "",
+    "jins": "ogil",
+    "malumot": "Test account",
+    "ball": 1000014,
+    "bosqich": 20,
+    "mavsum": 99,
+    "avatar": "oddiy",
+    "gadjetlar": [],
+    "bonuslar": {},
+    "online": false,
+    "test_account": true,
+    "maqsadlar": [],
+    "dostlar": [
+      "Muhammadakbar"
+    ],
+    "bildirishnomalar": [
+      {
+        "tur": "sovga",
+        "kimdan": "Muhammadakbar",
+        "miqdor": 2000,
+        "vaqt": "2025-12-08 10:49",
+        "oqilgan": false
+      }
+    ],
+    "tugilgan_kun": "2014-12-11",
+    "sertifikatlar": [
+      "ball_1000",
+      "ball_5000",
+      "ball_10000"
+    ],
+    "oxirgi_bonus": "2025-12-08",
+    "bonus_streak": 1
+  },
+  "Test5": {
+    "parol": "test555",
+    "eslatma": "",
+    "jins": "ogil",
+    "malumot": "Test account",
+    "ball": 999999,
+    "bosqich": 20,
+    "mavsum": 99,
+    "avatar": "oddiy",
+    "gadjetlar": [],
+    "bonuslar": {},
+    "online": true,
+    "test_account": true
+  }
+}

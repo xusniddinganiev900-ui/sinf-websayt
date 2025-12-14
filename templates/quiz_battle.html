@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Battle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .quiz-container { max-width: 500px; margin: 0 auto; text-align: center; }
+        .lobby { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .room-code { font-size: 2.5em; font-weight: bold; color: #667eea; letter-spacing: 5px; margin: 20px 0; }
+        .players-list { background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 20px 0; }
+        .question-box { background: white; padding: 30px; border-radius: 20px; margin: 20px 0; }
+        .question-text { font-size: 1.4em; margin-bottom: 25px; }
+        .answer-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .answer-btn:hover { background: #667eea; color: white; }
+        .answer-btn.selected { background: #667eea; color: white; }
+        .answer-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+        .results { background: white; padding: 30px; border-radius: 20px; }
+        .result-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .btn { padding: 15px 40px; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        input[type="text"] { padding: 15px; font-size: 1.2em; border: 2px solid #ddd; border-radius: 10px; width: 150px; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('oyin') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Quiz Battle</h1>
+
+            <div class="quiz-container">
+                <div class="lobby" id="lobby">
+                    <h2>Bilim bellashuvi!</h2>
+                    <button class="btn btn-primary" onclick="createRoom()">Xona yaratish</button>
+                    <div style="margin: 20px 0;">yoki</div>
+                    <input type="text" id="roomInput" placeholder="123456" maxlength="6">
+                    <button class="btn" style="background: #6c757d; color: white;" onclick="joinRoom()">Qo'shilish</button>
+                </div>
+
+                <div id="waiting" style="display: none;">
+                    <div class="room-code" id="roomCode"></div>
+                    <div class="players-list">
+                        <h3>O'yinchilar:</h3>
+                        <div id="playersList"></div>
+                    </div>
+                    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="display: none;">Boshlash</button>
+                </div>
+
+                <div id="game" style="display: none;">
+                    <div class="question-box">
+                        <div style="color: #666; margin-bottom: 10px;">Savol <span id="qNum">1</span>/5</div>
+                        <div class="question-text" id="questionText"></div>
+                        <div id="answers"></div>
+                    </div>
+                </div>
+
+                <div class="results" id="results" style="display: none;">
+                    <h2>Natijalar</h2>
+                    <div id="resultsList"></div>
+                    <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Yangi o'yin</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const socket = io();
+        let roomCode = '';
+        let isHost = false;
+
+        function createRoom() {
+            socket.emit('quiz_xona_yaratish');
+            isHost = true;
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('roomInput').value;
+            if (code.length === 6) {
+                socket.emit('quiz_qoshilish', {room_code: code});
+                roomCode = code;
+                document.getElementById('lobby').style.display = 'none';
+                document.getElementById('waiting').style.display = 'block';
+                document.getElementById('roomCode').textContent = code;
+            }
+        }
+
+        socket.on('quiz_xona_yaratildi', data => {
+            roomCode = data.room_code;
+            document.getElementById('roomCode').textContent = roomCode;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('waiting').style.display = 'block';
+            document.getElementById('startBtn').style.display = 'block';
+        });
+
+        socket.on('quiz_oyinchi_qoshildi', data => {
+            document.getElementById('playersList').innerHTML = data.players.map(p => `<div style="padding: 5px;">${p}</div>`).join('');
+        });
+
+        socket.on('quiz_savol', data => {
+            document.getElementById('waiting').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('qNum').textContent = data.index + 1;
+            document.getElementById('questionText').textContent = data.savol;
+
+            const answersDiv = document.getElementById('answers');
+            answersDiv.innerHTML = '';
+            data.javoblar.forEach((j, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = j;
+                btn.onclick = () => answer(i, btn);
+                answersDiv.appendChild(btn);
+            });
+        });
+
+        socket.on('quiz_tugadi', data => {
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const sorted = Object.entries(data.natijalar).sort((a, b) => b[1] - a[1]);
+            document.getElementById('resultsList').innerHTML = sorted.map((item, i) =>
+                `<div class="result-item">
+                    <span>${i + 1}. ${item[0]}</span>
+                    <span style="font-weight: bold; color: #667eea;">${item[1]} ball</span>
+                </div>`
+            ).join('');
+        });
+
+        function startGame() {
+            socket.emit('quiz_boshlash', {room_code: roomCode});
+        }
+
+        function answer(index, btn) {
+            document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+            btn.classList.add('selected');
+            socket.emit('quiz_javob', {room_code: roomCode, javob: index});
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinfimiz - Bosh sahifa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        // Dark mode ni sahifa yuklanishidan oldin qo'llash
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        /* O'quvchi kartasi bosiladigan */
+        .student-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .student-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Profil Modal */
+        .profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .profile-modal.show {
+            display: flex;
+        }
+        .profile-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            overflow: hidden;
+            animation: modalSlide 0.3s ease;
+        }
+        @keyframes modalSlide {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: white;
+            margin-bottom: 15px;
+        }
+        .profile-name {
+            color: white;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        .profile-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .profile-status.online {
+            background: #4caf50;
+            color: white;
+        }
+        .profile-status.offline {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+        .profile-body {
+            padding: 25px;
+        }
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .profile-stat {
+            text-align: center;
+        }
+        .profile-stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .profile-stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .profile-bio {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .profile-bio-title {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .profile-bio-text {
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .profile-bio-empty {
+            color: #999;
+            font-style: italic;
+        }
+        .profile-gadgets {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .profile-gadget {
+            width: 40px;
+            height: 40px;
+            background: #f0f4ff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-gadget img {
+            width: 30px;
+            height: 30px;
+        }
+        .profile-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .profile-close:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        /* Kunlik bonus */
+        .daily-bonus-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(245, 175, 25, 0.4);
+            animation: bounce 2s infinite;
+            z-index: 100;
+        }
+        .daily-bonus-btn:hover {
+            transform: scale(1.05);
+        }
+        .daily-bonus-btn.claimed {
+            background: #ccc;
+            animation: none;
+            cursor: default;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .bonus-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .bonus-modal.show { display: flex; }
+        .bonus-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 350px;
+            animation: modalSlide 0.3s ease;
+        }
+        .bonus-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .bonus-title {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .bonus-amount {
+            font-size: 3em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 20px 0;
+        }
+        .bonus-streak {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .bonus-close {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Chap menyu -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('kabinet') }}">
+                        <span class="icon">👤</span> Kabinet
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('reyting') }}">
+                        <span class="icon">🏆</span> Reyting
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dostlar') }}">
+                        <span class="icon">👥</span> Do'stlar
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('bildirishnomalar') }}">
+                        <span class="icon">🔔</span> Bildirishnomalar
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('elonlar') }}">
+                        <span class="icon">📢</span> E'lonlar
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('yutuqlar_sahifa') }}">
+                        <span class="icon">🏅</span> Yutuqlar
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('statistika') }}">
+                        <span class="icon">📊</span> Statistika
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('magazin') }}">
+                        <span class="icon">🛒</span> Magazin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- Asosiy kontent -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Sinfimiz</h1>
+                <p>Barcha o'quvchilar ({{ barcha_oquvchilar|length }} ta)</p>
+            </header>
+
+            <!-- Tezkor harakatlar -->
+            <div class="quick-actions" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
+                <!-- Kundalik bonus -->
+                <div class="bonus-card" id="bonusCard" onclick="olishBonus()" style="background: linear-gradient(135deg, #f5af19, #f12711); color: white; padding: 20px; border-radius: 15px; cursor: pointer; flex: 1; min-width: 200px; text-align: center;">
+                    <div style="font-size: 2em;">🎁</div>
+                    <div style="font-weight: bold; margin: 10px 0;">Kundalik bonus</div>
+                    <div id="bonusStatus">Bosing va ball oling!</div>
+                </div>
+
+                <!-- Maqsadlar -->
+                <a href="{{ url_for('maqsadlar') }}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 15px; text-decoration: none; flex: 1; min-width: 150px; text-align: center;">
+                    <div style="font-size: 2em;">🎯</div>
+                    <div style="font-weight: bold; margin-top: 10px;">Maqsadlar</div>
+                </a>
+
+                <!-- Jamoa topshiriqlari -->
+                <a href="{{ url_for('jamoa_topshiriq') }}" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; padding: 20px; border-radius: 15px; text-decoration: none; flex: 1; min-width: 150px; text-align: center;">
+                    <div style="font-size: 2em;">👥</div>
+                    <div style="font-weight: bold; margin-top: 10px;">Jamoa</div>
+                </a>
+
+                <!-- Reyting -->
+                <a href="{{ url_for('reyting_vaqt', tur='hafta') }}" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; padding: 20px; border-radius: 15px; text-decoration: none; flex: 1; min-width: 150px; text-align: center;">
+                    <div style="font-size: 2em;">🏆</div>
+                    <div style="font-weight: bold; margin-top: 10px;">Reyting</div>
+                </a>
+            </div>
+
+            <!-- Yangi funksiyalar -->
+            <h3 style="margin-bottom: 15px; color: #333;">Yangi imkoniyatlar</h3>
+            <div class="quick-actions" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 25px;">
+                <a href="{{ url_for('devor') }}" style="background: linear-gradient(135deg, #e17055, #d63031); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">📝</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Sinf devori</div>
+                </a>
+                <a href="{{ url_for('xabarlar') }}" style="background: linear-gradient(135deg, #0984e3, #74b9ff); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">💌</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Xabarlar</div>
+                </a>
+                <a href="{{ url_for('tugilgan_kunlar') }}" style="background: linear-gradient(135deg, #fd79a8, #e84393); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🎂</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Tug'ilgan kun</div>
+                </a>
+                <a href="{{ url_for('sorovnomalar') }}" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">📊</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">So'rovnoma</div>
+                </a>
+                <a href="{{ url_for('blog') }}" style="background: linear-gradient(135deg, #00b894, #55efc4); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">✍️</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Mini Blog</div>
+                </a>
+            </div>
+
+            <!-- Turnirlar -->
+            <h3 style="margin-bottom: 15px; color: #333;">Turnirlar</h3>
+            <div class="quick-actions" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 25px;">
+                <a href="{{ url_for('turnirlar') }}" style="background: linear-gradient(135deg, #f39c12, #e74c3c); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🏆</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Kunlik turnir</div>
+                </a>
+                <a href="{{ url_for('turnirlar', tur='haftalik') }}" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🥇</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Haftalik turnir</div>
+                </a>
+                <a href="{{ url_for('turnirlar', tur='oylik') }}" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🏅</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Oylik turnir</div>
+                </a>
+                <a href="{{ url_for('turnirlar', tur='mavsumiy') }}" style="background: linear-gradient(135deg, #1abc9c, #16a085); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">👑</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Mavsumiy liga</div>
+                </a>
+            </div>
+
+            <!-- O'quv vositalari -->
+            <h3 style="margin-bottom: 15px; color: #333;">O'quv vositalari</h3>
+            <div class="quick-actions" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 25px;">
+                <a href="{{ url_for('flashcards') }}" style="background: linear-gradient(135deg, #fdcb6e, #f39c12); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🗂️</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Flashcards</div>
+                </a>
+                <a href="{{ url_for('pomodoro') }}" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🍅</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Pomodoro</div>
+                </a>
+                <a href="{{ url_for('kitoblar') }}" style="background: linear-gradient(135deg, #00cec9, #81ecec); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">📚</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Kitoblar</div>
+                </a>
+                <a href="{{ url_for('vazifalar') }}" style="background: linear-gradient(135deg, #636e72, #2d3436); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">✅</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Vazifalar</div>
+                </a>
+                <a href="{{ url_for('sertifikatlar') }}" style="background: linear-gradient(135deg, #f5af19, #f12711); color: white; padding: 15px; border-radius: 12px; text-decoration: none; flex: 1; min-width: 100px; text-align: center;">
+                    <div style="font-size: 1.5em;">🏆</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">Sertifikatlar</div>
+                </a>
+            </div>
+
+            <h3 style="margin-bottom: 15px; color: #333;">Sinfdoshlar</h3>
+            <div class="students-grid">
+                {% for student_name, student_data in barcha_oquvchilar.items() %}
+                {% if student_name != 'HAKER' %}
+                <div class="student-card {% if student_data.online %}online{% endif %}"
+                     data-name="{{ student_name }}"
+                     data-info='{{ student_data | tojson }}'
+                     onclick="showProfileFromCard(this)">
+                    <div class="student-avatar">
+                        {% if student_data.avatar == 'super_ogil' %}
+                        <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="{{ student_name }}">
+                        {% elif student_data.avatar == 'super_qiz' %}
+                        <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="{{ student_name }}">
+                        {% elif student_data.avatar == 'ninja' %}
+                        <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="{{ student_name }}">
+                        {% elif student_data.avatar == 'robot' %}
+                        <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="{{ student_name }}">
+                        {% elif student_data.avatar == 'astronavt' %}
+                        <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="{{ student_name }}">
+                        {% elif student_data.jins == 'qiz' %}
+                        <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="{{ student_name }}">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="{{ student_name }}">
+                        {% endif %}
+                        {% if student_data.online %}
+                        <span class="online-badge"></span>
+                        {% endif %}
+                    </div>
+                    <div class="student-info">
+                        <h3>{{ student_name }}</h3>
+                        <p class="student-stats">
+                            <span class="stat">{{ student_data.ball }} ball</span>
+                            <span class="stat">Mavsum {{ student_data.mavsum }}</span>
+                        </p>
+                        {% if student_data.malumot %}
+                        <p class="student-bio">{{ student_data.malumot[:50] }}{% if student_data.malumot|length > 50 %}...{% endif %}</p>
+                        {% else %}
+                        <p class="student-bio no-bio">Ma'lumot kiritilmagan</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Profil Modal -->
+    <div class="profile-modal" id="profileModal" onclick="closeProfile(event)">
+        <div class="profile-content" onclick="event.stopPropagation()">
+            <div class="profile-header">
+                <button class="profile-close" onclick="closeProfile()">&times;</button>
+                <img class="profile-avatar" id="modalAvatar" src="" alt="Avatar">
+                <h2 class="profile-name" id="modalName"></h2>
+                <span class="profile-status" id="modalStatus"></span>
+            </div>
+            <div class="profile-body">
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <div class="profile-stat-value" id="modalBall">0</div>
+                        <div class="profile-stat-label">Ball</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-stat-value" id="modalBosqich">1</div>
+                        <div class="profile-stat-label">Bosqich</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-stat-value" id="modalMavsum">1</div>
+                        <div class="profile-stat-label">Mavsum</div>
+                    </div>
+                </div>
+                <div class="profile-bio">
+                    <div class="profile-bio-title">O'zi haqida:</div>
+                    <div class="profile-bio-text" id="modalBio"></div>
+                </div>
+                <div class="profile-gadgets" id="modalGadgets">
+                    <!-- Gadjetlar shu yerda ko'rsatiladi -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getAvatarUrl(avatar, jins) {
+            const avatars = {
+                'super_ogil': '/static/images/super_ogil.svg',
+                'super_qiz': '/static/images/super_qiz.svg',
+                'ninja': '/static/images/ninja.svg',
+                'robot': '/static/images/robot.svg',
+                'astronavt': '/static/images/astronavt.svg'
+            };
+            if (avatars[avatar]) {
+                return avatars[avatar];
+            }
+            return jins === 'qiz' ? '/static/images/qiz.svg' : '/static/images/ogil.svg';
+        }
+
+        function showProfileFromCard(element) {
+            const name = element.getAttribute('data-name');
+            const data = JSON.parse(element.getAttribute('data-info'));
+            showProfile(name, data);
+        }
+
+        function showProfile(name, data) {
+            document.getElementById('modalName').textContent = name;
+            document.getElementById('modalAvatar').src = getAvatarUrl(data.avatar, data.jins);
+            document.getElementById('modalBall').textContent = data.ball || 0;
+            document.getElementById('modalBosqich').textContent = data.bosqich || 1;
+            document.getElementById('modalMavsum').textContent = data.mavsum || 1;
+
+            // Status
+            const statusEl = document.getElementById('modalStatus');
+            if (data.online) {
+                statusEl.textContent = '🟢 Online';
+                statusEl.className = 'profile-status online';
+            } else {
+                statusEl.textContent = '⚫ Offline';
+                statusEl.className = 'profile-status offline';
+            }
+
+            // Bio
+            const bioEl = document.getElementById('modalBio');
+            if (data.malumot && data.malumot.trim()) {
+                bioEl.textContent = data.malumot;
+                bioEl.className = 'profile-bio-text';
+            } else {
+                bioEl.textContent = "Ma'lumot kiritilmagan";
+                bioEl.className = 'profile-bio-text profile-bio-empty';
+            }
+
+            // Gadjetlar
+            const gadgetsEl = document.getElementById('modalGadgets');
+            gadgetsEl.innerHTML = '';
+            if (data.gadjetlar && data.gadjetlar.length > 0) {
+                data.gadjetlar.forEach(gadjet => {
+                    const div = document.createElement('div');
+                    div.className = 'profile-gadget';
+                    div.innerHTML = `<img src="/static/images/${gadjet}.svg" alt="${gadjet}" title="${gadjet}">`;
+                    gadgetsEl.appendChild(div);
+                });
+            }
+
+            document.getElementById('profileModal').classList.add('show');
+        }
+
+        function closeProfile(event) {
+            if (!event || event.target === document.getElementById('profileModal')) {
+                document.getElementById('profileModal').classList.remove('show');
+            }
+        }
+
+        // ESC tugmasi bilan yopish
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeProfile();
+                closeBonusModal();
+            }
+        });
+
+        // Kunlik bonus
+        let bonusMavjud = false;
+
+        function checkBonus() {
+            fetch('/bonus_tekshir')
+                .then(r => r.json())
+                .then(data => {
+                    bonusMavjud = data.mavjud;
+                    const btn = document.getElementById('dailyBonusBtn');
+                    if (data.mavjud) {
+                        btn.classList.remove('claimed');
+                        btn.innerHTML = '🎁 Kunlik bonus';
+                    } else {
+                        btn.classList.add('claimed');
+                        btn.innerHTML = '✓ Olingan';
+                    }
+                });
+        }
+
+        function claimBonus() {
+            if (!bonusMavjud) return;
+
+            fetch('/kunlik_bonus')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('bonusAmount').textContent = '+' + data.bonus + ' ball';
+                        document.getElementById('bonusStreak').textContent = data.streak + ' kun ketma-ket!';
+                        document.getElementById('bonusModal').classList.add('show');
+                        checkBonus();
+                    } else {
+                        alert(data.xato);
+                    }
+                });
+        }
+
+        function closeBonusModal() {
+            document.getElementById('bonusModal').classList.remove('show');
+            location.reload();
+        }
+
+        // Sahifa yuklanganda bonus tekshirish
+        checkBonus();
+    </script>
+
+    <!-- Kunlik bonus tugmasi -->
+    <button class="daily-bonus-btn" id="dailyBonusBtn" onclick="claimBonus()">🎁 Kunlik bonus</button>
+
+    {% if test_account or vip_account %}
+    <!-- Test/VIP account uchun coin berish tugmasi -->
+    <button class="daily-bonus-btn" style="bottom: 90px; background: linear-gradient(135deg, #00b894, #00cec9);" onclick="openCoinModal()">💰 Coin berish</button>
+
+    <!-- Coin berish modali -->
+    <div class="bonus-modal" id="coinModal">
+        <div class="bonus-content" style="text-align: left;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span style="font-size: 3em;">💰</span>
+                <h2>Coin berish</h2>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">O'quvchi tanlang:</label>
+                <select id="coinReceiver" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #ddd; font-size: 16px;">
+                    {% for name, info in all_users.items() %}
+                    {% if not info.test_account and not info.vip_account %}
+                    <option value="{{ name }}">{{ name }} ({{ info.ball }} ball)</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Miqdor:</label>
+                <input type="number" id="coinAmount" value="100" min="1" max="10000" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #ddd; font-size: 16px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeCoinModal()" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #ccc; cursor: pointer;">Bekor qilish</button>
+                <button onclick="sendCoin()" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00b894, #00cec9); color: white; cursor: pointer; font-weight: bold;">Yuborish</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openCoinModal() {
+            document.getElementById('coinModal').classList.add('show');
+        }
+        function closeCoinModal() {
+            document.getElementById('coinModal').classList.remove('show');
+        }
+        function sendCoin() {
+            const receiver = document.getElementById('coinReceiver').value;
+            const amount = document.getElementById('coinAmount').value;
+
+            fetch('/coin_berish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({qabul_qiluvchi: receiver, miqdor: parseInt(amount)})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.xabar);
+                    closeCoinModal();
+                    location.reload();
+                } else {
+                    alert(data.xato);
+                }
+            });
+        }
+    </script>
+    {% endif %}
+
+    <!-- Bonus modal -->
+    <div class="bonus-modal" id="bonusModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+        <div class="bonus-content" style="background: white; border-radius: 20px; padding: 40px; text-align: center; animation: bonusPop 0.5s ease;">
+            <div class="bonus-icon" style="font-size: 4em;">🎉</div>
+            <h2 class="bonus-title" style="margin: 15px 0;">Tabriklaymiz!</h2>
+            <div class="bonus-amount" id="bonusAmount" style="font-size: 2.5em; color: #f5af19; font-weight: bold;">+10 ball</div>
+            <p class="bonus-streak" id="bonusStreak" style="color: #666; margin: 10px 0;">1 kun ketma-ket!</p>
+            <button class="bonus-close" onclick="closeBonusModal()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 1em; margin-top: 15px;">Davom etish</button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes bonusPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+
+    <script>
+        function olishBonus() {
+            fetch('/kundalik_bonus', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('bonusAmount').textContent = '+' + data.ball + ' ball';
+                    document.getElementById('bonusStreak').textContent = data.streak + ' kun ketma-ket!';
+                    document.getElementById('bonusModal').style.display = 'flex';
+                    document.getElementById('bonusCard').style.opacity = '0.5';
+                    document.getElementById('bonusStatus').textContent = 'Bugun olindi ✓';
+                } else {
+                    document.getElementById('bonusCard').style.opacity = '0.5';
+                    document.getElementById('bonusStatus').textContent = data.xato || 'Bugun olindi ✓';
+                }
+            });
+        }
+
+        function closeBonusModal() {
+            document.getElementById('bonusModal').style.display = 'none';
+            location.reload();
+        }
+    </script>
+</body>
+</html>

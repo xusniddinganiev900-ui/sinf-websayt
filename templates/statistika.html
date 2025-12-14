@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistika</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .stats-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card {
+            background: white; border-radius: 15px; padding: 25px; text-align: center;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        .stat-card.highlight { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .stat-icon { font-size: 2.5em; margin-bottom: 10px; }
+        .stat-value { font-size: 2em; font-weight: bold; }
+        .stat-label { font-size: 13px; opacity: 0.8; }
+        .rank-display {
+            background: linear-gradient(135deg, #f5af19, #f12711); color: white;
+            border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 20px;
+        }
+        .rank-number { font-size: 4em; font-weight: bold; }
+        .rank-text { font-size: 1.2em; }
+        [data-theme="dark"] .stat-card { background: #2d2d2d; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar"><img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar"></div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('home') }}"><span class="icon">🏠</span> Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('kabinet') }}"><span class="icon">👤</span> Kabinet</a></li>
+                <li class="nav-item"><a href="{{ url_for('yutuqlar_sahifa') }}"><span class="icon">🏅</span> Yutuqlar</a></li>
+                <li class="nav-item active"><a href="{{ url_for('statistika') }}"><span class="icon">📊</span> Statistika</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn"><span class="icon">🚪</span> Chiqish</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="stats-container">
+                <h1>📊 Mening statistikam</h1>
+
+                <div class="rank-display">
+                    <div class="rank-number">#{{ stats.reyting }}</div>
+                    <div class="rank-text">{{ stats.jami_oyinchilar }} o'yinchi ichida</div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card highlight">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-value">{{ stats.ball }}</div>
+                        <div class="stat-label">Jami ball</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-value">{{ stats.mavsum }}</div>
+                        <div class="stat-label">Mavsum</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value">{{ stats.bosqich }}/20</div>
+                        <div class="stat-label">Bosqich</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value">{{ stats.dostlar }}</div>
+                        <div class="stat-label">Do'stlar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏅</div>
+                        <div class="stat-value">{{ stats.yutuqlar }}</div>
+                        <div class="stat-label">Yutuqlar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-value">{{ stats.bonus_streak }}</div>
+                        <div class="stat-label">Kun streak</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

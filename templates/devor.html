@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinf devori</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .devor-container { max-width: 600px; margin: 0 auto; }
+        .post-form { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .post-input { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 10px; resize: none; font-size: 1em; }
+        .post-btn { margin-top: 10px; padding: 10px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; cursor: pointer; float: right; }
+        .post-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .post-header { display: flex; align-items: center; margin-bottom: 15px; }
+        .post-avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px; }
+        .post-meta { flex: 1; }
+        .post-author { font-weight: bold; color: #333; }
+        .post-time { font-size: 0.85em; color: #999; }
+        .post-content { line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; }
+        .post-actions { display: flex; gap: 20px; }
+        .action-btn { background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .action-btn:hover { color: #667eea; }
+        .action-btn.liked { color: #e74c3c; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Sinf devori</h1>
+
+            <div class="devor-container">
+                <div class="post-form">
+                    <textarea class="post-input" id="postInput" rows="3" placeholder="Nima demoqchisiz?"></textarea>
+                    <button class="post-btn" onclick="createPost()">Joylash</button>
+                    <div style="clear: both;"></div>
+                </div>
+
+                <div id="posts">
+                    {% for post in postlar %}
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-avatar">{{ post.muallif[0] }}</div>
+                            <div class="post-meta">
+                                <div class="post-author">{{ post.muallif }}</div>
+                                <div class="post-time">{{ post.vaqt }}</div>
+                            </div>
+                        </div>
+                        <div class="post-content">{{ post.matn }}</div>
+                        <div class="post-actions">
+                            <button class="action-btn {% if ism in post.yoqtirishlar %}liked{% endif %}" onclick="likePost({{ post.id }}, this)">
+                                ❤️ <span>{{ post.yoqtirishlar|length }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function createPost() {
+            const matn = document.getElementById('postInput').value.trim();
+            if (!matn) return;
+
+            fetch('/devor_post', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({matn: matn})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+
+        function likePost(postId, btn) {
+            fetch('/devor_yoqtirish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({post_id: postId})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

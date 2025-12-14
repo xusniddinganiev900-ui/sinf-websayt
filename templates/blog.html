@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Blog</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 600px; margin: 0 auto; }
+        .write-post { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .write-post input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; margin-bottom: 10px; font-size: 1.1em; font-weight: bold; box-sizing: border-box; }
+        .write-post textarea { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; margin-bottom: 10px; resize: vertical; min-height: 120px; box-sizing: border-box; }
+        .write-post button { padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; cursor: pointer; }
+        .post-card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.1); }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .post-title { font-size: 1.4em; font-weight: bold; color: #333; }
+        .post-date { color: #999; font-size: 0.85em; }
+        .post-content { line-height: 1.8; color: #555; white-space: pre-wrap; }
+        .post-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        .delete-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9em; }
+        .delete-btn:hover { text-decoration: underline; }
+        .empty-state { text-align: center; padding: 60px; color: #999; }
+        .empty-icon { font-size: 4em; margin-bottom: 15px; }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <main class="main-content" style="padding: 20px;">
+            <a href="{{ url_for('home') }}" style="color: #667eea; text-decoration: none;">← Orqaga</a>
+            <h1 style="text-align: center;">Mini Blog</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 25px;">O'z fikrlaringizni yozing (+10 ball)</p>
+
+            <div class="container">
+                <div class="write-post">
+                    <input type="text" id="postTitle" placeholder="Sarlavha...">
+                    <textarea id="postContent" placeholder="Fikrlaringizni yozing..."></textarea>
+                    <button onclick="createPost()">Joylash</button>
+                </div>
+
+                {% for post in postlar %}
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-title">{{ post.sarlavha }}</div>
+                        <div class="post-date">{{ post.vaqt }}</div>
+                    </div>
+                    <div class="post-content">{{ post.matn }}</div>
+                    <div class="post-actions">
+                        <button class="delete-btn" onclick="deletePost({{ post.id }})">O'chirish</button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">✍️</div>
+                    <p>Hali postlar yo'q</p>
+                    <p>Birinchi postingizni yozing!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function createPost() {
+            const sarlavha = document.getElementById('postTitle').value.trim();
+            const matn = document.getElementById('postContent').value.trim();
+
+            if (!sarlavha || !matn) {
+                alert('Sarlavha va matnni kiriting');
+                return;
+            }
+
+            fetch('/blog_yozish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sarlavha, matn})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+
+        function deletePost(id) {
+            if (!confirm('Rostdan o\'chirmoqchimisiz?')) return;
+
+            fetch('/blog_ochirish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
