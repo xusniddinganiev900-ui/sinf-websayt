@@ -78,9 +78,21 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            upgrade: true
+        });
         let roomCode = '';
         let isHost = false;
+
+        socket.on('connect_error', (error) => {
+            console.log('Ulanish xatosi:', error);
+            alert('Serverga ulanishda xatolik. Sahifani yangilang.');
+        });
+
+        socket.on('quiz_xato', (data) => {
+            alert(data.xabar);
+        });
 
         function createRoom() {
             socket.emit('quiz_xona_yaratish');

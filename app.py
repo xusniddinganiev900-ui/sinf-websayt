@@ -3368,11 +3368,14 @@ QUIZ_SAVOLLAR = [
 
 @app.route('/quiz_battle')
 def quiz_battle():
-    if 'foydalanuvchi' not in session:
+    if 'foydalanuvchi' not in session or 'sinf_id' not in session:
         return redirect(url_for('sinflar'))
     ism = session['foydalanuvchi']
     sinf_id = session['sinf_id']
     data = load_data(sinf_id)
+    if ism not in data:
+        session.clear()
+        return redirect(url_for('sinflar'))
     return render_template('quiz_battle.html', ism=ism, foydalanuvchi=data[ism])
 
 @socketio.on('quiz_xona_yaratish')
