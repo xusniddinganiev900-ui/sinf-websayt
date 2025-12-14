@@ -634,6 +634,76 @@ def home():
                          vip_account=session.get('vip_account', False),
                          all_users=visible_users)
 
+@app.route('/jadval')
+def jadval():
+    if 'foydalanuvchi' not in session or 'sinf_id' not in session:
+        return redirect(url_for('sinflar'))
+
+    ism = session['foydalanuvchi']
+    sinf_id = session['sinf_id']
+    data = load_data(sinf_id)
+
+    if ism not in data:
+        session.clear()
+        return redirect(url_for('sinflar'))
+
+    # Bugungi kun (0=Dushanba, 5=Shanba)
+    from datetime import datetime
+    bugun = datetime.now().weekday()
+    if bugun > 5:  # Yakshanba
+        bugun = 0
+
+    # Jadval ma'lumotlari (sinf uchun)
+    jadval_file = os.path.join(SINFLAR_DIR, sinf_id, 'jadval.json')
+    if os.path.exists(jadval_file):
+        with open(jadval_file, 'r', encoding='utf-8') as f:
+            jadval_data = json.load(f)
+    else:
+        # Default jadval
+        jadval_data = {
+            "0": [
+                {"nomi": "Matematika", "vaqt": "08:00 - 08:45", "oqituvchi": ""},
+                {"nomi": "Ona tili", "vaqt": "08:55 - 09:40", "oqituvchi": ""},
+                {"nomi": "Ingliz tili", "vaqt": "09:50 - 10:35", "oqituvchi": ""},
+                {"nomi": "Tarix", "vaqt": "10:55 - 11:40", "oqituvchi": ""}
+            ],
+            "1": [
+                {"nomi": "Fizika", "vaqt": "08:00 - 08:45", "oqituvchi": ""},
+                {"nomi": "Kimyo", "vaqt": "08:55 - 09:40", "oqituvchi": ""},
+                {"nomi": "Biologiya", "vaqt": "09:50 - 10:35", "oqituvchi": ""},
+                {"nomi": "Informatika", "vaqt": "10:55 - 11:40", "oqituvchi": ""}
+            ],
+            "2": [
+                {"nomi": "Matematika", "vaqt": "08:00 - 08:45", "oqituvchi": ""},
+                {"nomi": "Adabiyot", "vaqt": "08:55 - 09:40", "oqituvchi": ""},
+                {"nomi": "Geografiya", "vaqt": "09:50 - 10:35", "oqituvchi": ""},
+                {"nomi": "Chizmachilik", "vaqt": "10:55 - 11:40", "oqituvchi": ""}
+            ],
+            "3": [
+                {"nomi": "Ingliz tili", "vaqt": "08:00 - 08:45", "oqituvchi": ""},
+                {"nomi": "Matematika", "vaqt": "08:55 - 09:40", "oqituvchi": ""},
+                {"nomi": "Ona tili", "vaqt": "09:50 - 10:35", "oqituvchi": ""},
+                {"nomi": "Jismoniy tarbiya", "vaqt": "10:55 - 11:40", "oqituvchi": ""}
+            ],
+            "4": [
+                {"nomi": "Informatika", "vaqt": "08:00 - 08:45", "oqituvchi": ""},
+                {"nomi": "Fizika", "vaqt": "08:55 - 09:40", "oqituvchi": ""},
+                {"nomi": "Matematika", "vaqt": "09:50 - 10:35", "oqituvchi": ""},
+                {"nomi": "Musiqa", "vaqt": "10:55 - 11:40", "oqituvchi": ""}
+            ],
+            "5": [
+                {"nomi": "Tarix", "vaqt": "08:00 - 08:45", "oqituvchi": ""},
+                {"nomi": "Adabiyot", "vaqt": "08:55 - 09:40", "oqituvchi": ""},
+                {"nomi": "Rasm", "vaqt": "09:50 - 10:35", "oqituvchi": ""}
+            ]
+        }
+
+    return render_template('jadval.html',
+                         ism=ism,
+                         foydalanuvchi=data[ism],
+                         jadval=jadval_data,
+                         bugun_kun=bugun)
+
 @app.route('/kabinet')
 def kabinet():
     if 'foydalanuvchi' not in session or 'sinf_id' not in session:

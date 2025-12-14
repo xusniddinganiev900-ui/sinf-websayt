@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dars jadvali</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <style>
+        .jadval-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .jadval-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .jadval-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .jadval-tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: #666;
+        }
+        .jadval-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .jadval-tab:hover:not(.active) {
+            background: #f0f4ff;
+            color: #667eea;
+        }
+        .schedule-grid {
+            display: grid;
+            gap: 15px;
+        }
+        .day-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-header.today {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .today-badge {
+            background: rgba(255,255,255,0.3);
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+        .lessons-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 15px;
+        }
+        .lesson-item:last-child {
+            border-bottom: none;
+        }
+        .lesson-number {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .lesson-info {
+            flex: 1;
+        }
+        .lesson-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .lesson-time {
+            font-size: 0.85em;
+            color: #999;
+        }
+        .lesson-teacher {
+            font-size: 0.85em;
+            color: #667eea;
+        }
+        /* Qo'ng'iroq jadvali */
+        .bell-schedule {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .bell-schedule h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .bell-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .bell-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .bell-item strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .bell-item span {
+            color: #666;
+            font-size: 0.9em;
+        }
+        /* Tanaffus */
+        .break-item {
+            background: #fff3e0;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e65100;
+            font-size: 0.9em;
+        }
+        /* Admin tahrirlash */
+        .edit-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .edit-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        /* Modal */
+        .jadval-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .jadval-modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            color: #667eea;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+        }
+        /* Empty state */
+        .empty-day {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+        }
+        .empty-day span {
+            font-size: 2em;
+            display: block;
+            margin-bottom: 10px;
+        }
+        /* Dark mode */
+        [data-theme="dark"] .day-card,
+        [data-theme="dark"] .bell-schedule,
+        [data-theme="dark"] .modal-content {
+            background: var(--bg-card);
+        }
+        [data-theme="dark"] .lesson-name,
+        [data-theme="dark"] .modal-header h2 {
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .jadval-tab {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+        }
+        [data-theme="dark"] .bell-item {
+            background: var(--bg-secondary);
+        }
+        [data-theme="dark"] .lesson-item {
+            border-color: var(--border-color);
+        }
+    </style>
+</head>
+<body class="app-body">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    {% if foydalanuvchi.avatar == 'super_ogil' %}
+                    <img src="{{ url_for('static', filename='images/super_ogil.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'super_qiz' %}
+                    <img src="{{ url_for('static', filename='images/super_qiz.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'ninja' %}
+                    <img src="{{ url_for('static', filename='images/ninja.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'robot' %}
+                    <img src="{{ url_for('static', filename='images/robot.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.avatar == 'astronavt' %}
+                    <img src="{{ url_for('static', filename='images/astronavt.svg') }}" alt="Avatar">
+                    {% elif foydalanuvchi.jins == 'qiz' %}
+                    <img src="{{ url_for('static', filename='images/qiz.svg') }}" alt="Avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/ogil.svg') }}" alt="Avatar">
+                    {% endif %}
+                </div>
+                <h3>{{ ism }}</h3>
+                <p class="ball-display">{{ foydalanuvchi.ball }} ball</p>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('home') }}">
+                        <span class="icon">🏠</span> Home
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="{{ url_for('jadval') }}">
+                        <span class="icon">📅</span> Dars jadvali
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('oyin') }}">
+                        <span class="icon">🎮</span> Game
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat') }}">
+                        <span class="icon">💬</span> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('sozlamalar') }}">
+                        <span class="icon">⚙️</span> Sozlamalar
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('chiqish') }}" class="logout-btn">
+                    <span class="icon">🚪</span> Chiqish
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>📅 Dars jadvali</h1>
+                <p>Haftalik dars jadvali va qo'ng'iroqlar</p>
+            </header>
+
+            <div class="jadval-container">
+                <!-- Qo'ng'iroq jadvali -->
+                <div class="bell-schedule">
+                    <h3>🔔 Qo'ng'iroq jadvali</h3>
+                    <div class="bell-grid">
+                        <div class="bell-item">
+                            <strong>1-dars</strong>
+                            <span>08:00 - 08:45</span>
+                        </div>
+                        <div class="bell-item">
+                            <strong>2-dars</strong>
+                            <span>08:55 - 09:40</span>
+                        </div>
+                        <div class="bell-item">
+                            <strong>3-dars</strong>
+                            <span>09:50 - 10:35</span>
+                        </div>
+                        <div class="bell-item">
+                            <strong>4-dars</strong>
+                            <span>10:55 - 11:40</span>
+                        </div>
+                        <div class="bell-item">
+                            <strong>5-dars</strong>
+                            <span>11:50 - 12:35</span>
+                        </div>
+                        <div class="bell-item">
+                            <strong>6-dars</strong>
+                            <span>12:45 - 13:30</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hafta kunlari -->
+                <div class="schedule-grid">
+                    {% set kunlar = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'] %}
+                    {% set bugun_index = bugun_kun %}
+
+                    {% for kun_index in range(6) %}
+                    <div class="day-card">
+                        <div class="day-header {% if kun_index == bugun_index %}today{% endif %}">
+                            <span>{{ kunlar[kun_index] }}</span>
+                            {% if kun_index == bugun_index %}
+                            <span class="today-badge">Bugun</span>
+                            {% endif %}
+                        </div>
+
+                        {% if jadval.get(kun_index|string) %}
+                        <ul class="lessons-list">
+                            {% for dars in jadval.get(kun_index|string, []) %}
+                            <li class="lesson-item">
+                                <div class="lesson-number">{{ loop.index }}</div>
+                                <div class="lesson-info">
+                                    <div class="lesson-name">{{ dars.nomi }}</div>
+                                    <div class="lesson-time">{{ dars.vaqt }}</div>
+                                    {% if dars.oqituvchi %}
+                                    <div class="lesson-teacher">{{ dars.oqituvchi }}</div>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% if loop.index == 3 and not loop.last %}
+                            <li class="break-item">
+                                <span>☕</span> Katta tanaffus (20 daqiqa)
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="empty-day">
+                            <span>📚</span>
+                            <p>Darslar kiritilmagan</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
